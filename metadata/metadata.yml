@@ -1,0 +1,5 @@
+metadata_version: 1
+name: AIND CCF Registration
+description: A capsule that launches CCF registration in a OMEZarr dataset
+authors:
+- name: AIND

@@ -3,7 +3,7 @@ requires = ["setuptools", "setuptools-scm"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "hello_world"
+name = "aind_ccf_reg"
 description = "Prints messages to stdout. Simple boilerplate for libraries."
 license = {text = "MIT"}
 requires-python = ">=3.7"
@@ -13,25 +13,30 @@ classifiers = [
 dynamic = ["version", "readme"]
 
 dependencies = [
-    'pandas'
+  'argschema==3.0.4',
+  'dask==2022.10.2',
+  'antspyx==0.3.4',
+  'scikit-image==0.19.3',
+  'tifffile==2022.10.10',
+  'zarr==2.13.3'
 ]
 
 [project.optional-dependencies]
 dev = [
-    'black',
-    'coverage',
-    'flake8',
-    'interrogate',
-    'isort',
-    'Sphinx',
-    'pygit2'
+  'black',
+  'coverage',
+  'flake8',
+  'interrogate',
+  'isort',
+  'Sphinx',
+  'pygit2'
 ]
 
 [tool.setuptools.packages.find]
-where = ["src"]
+where = ["code/src"]
 
 [tool.setuptools.dynamic]
-version = {attr = "hello_world.__version__"}
+version = {attr = "aind_ccf_reg.__version__"}
 readme = {file = ["README.md"]}
 
 [tool.black]
@@ -57,7 +62,7 @@ exclude = '''
 
 [tool.coverage.run]
 omit = ["*__init__*"]
-source = ["hello_world", "tests"]
+source = ["aind_ccf_reg", "tests"]
 
 [tool.coverage.report]
 exclude_lines = ["if __name__ == .__main__.:"]
