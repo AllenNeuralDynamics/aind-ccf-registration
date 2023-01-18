@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -ex
 
-# This is the master script for the capsule. When you click "Reproducible Run", the code in this file will execute.
+# The previous version of this file was commented-out and follows below:
 
 # python -u aind-ccf-registration/src/ccf_reg/register.py
 
