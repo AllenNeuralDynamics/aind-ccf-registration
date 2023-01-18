@@ -13,6 +13,7 @@ import zarr
 from argschema import ArgSchema, ArgSchemaParser
 from argschema.fields import Int, Str
 from skimage import io
+import shutil
 
 PathLike = Union[str, Path]
 
@@ -66,6 +67,20 @@ class RegSchema(ArgSchema):
         metadata={
             "required": True,
             "description": "Voxel Resolution of reference in microns",
+        }
+    )
+
+    fwd_transforms_file = Str(
+        metadata={
+            "required":True, 
+            "description":"Output forward Transforms file",
+        }
+    )
+    
+    inv_transforms_file = Str(
+        metadata={
+            "required":True, 
+            "description":"Output inverse Transforms file",
         }
     )
 
@@ -165,6 +180,15 @@ class Register(ArgSchemaParser):
             "%s_%dmicrons.tiff"
             % (self.args["output_data"], self.args["reference_res"]),
         )
+        shutil.copy(
+            reg12['fwdtransforms'][0], 
+            self.args['fwd_transforms_file'],
+        )
+        shutil.copy(
+            reg12['invtransforms'][0], 
+            self.args['inv_transforms_file'],
+        )
+
         return str(image_path)
 
 
@@ -178,6 +202,8 @@ def main():
         "output_data": "/results/registered_to_atlas",
         "downsampled_file": "/results/downsampled.tiff",
         "downsampled16bit_file": "/results/downsampled_16.tiff",
+        "fwd_transforms_file": "/results/fwd_transforms.mat",
+        "inv_transforms_file": "/results/inv_transforms.mat",
     }
 
     mod = Register(example_input)
