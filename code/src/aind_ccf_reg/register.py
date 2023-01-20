@@ -202,8 +202,8 @@ def main():
         "output_data": "/results/registered_to_atlas",
         "downsampled_file": "/results/downsampled.tiff",
         "downsampled16bit_file": "/results/downsampled_16.tiff",
-        "fwd_transforms_file": "/results/fwd_transforms.mat",
-        "inv_transforms_file": "/results/inv_transforms.mat",
+        "fwd_transforms_file": "/results/fwd_transforms.nii.gz",
+        "inv_transforms_file": "/results/inv_transforms.nii.gz",
     }
 
     mod = Register(example_input)
