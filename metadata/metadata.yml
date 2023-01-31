@@ -1,5 +1,13 @@
 metadata_version: 1
-name: AIND CCF Registration
-description: A capsule that launches CCF registration in a OMEZarr dataset
+name: SmartSPIM CCF Registration Capsule
+description: A tool for automated registration of lightsheet image volumes to the
+  Allen V3 CCF template
+tags:
+- SmartSPIM
 authors:
-- name: AIND
+- name: Camilo Laiton
+  affiliations:
+  - name: Allen Institute for Neural Dynamics
+- name: Sharmishtaa Seshamani
+  affiliations:
+  - name: Allen Institute for Neural Dynamics
