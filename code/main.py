@@ -5,7 +5,7 @@ Main used in code ocean to execute capsule
 import subprocess
 import sys
 
-from src.aind_ccf_reg import register
+from aind_ccf_reg import register
 
 
 def save_string_to_txt(txt: str, filepath: str, mode="w") -> None:

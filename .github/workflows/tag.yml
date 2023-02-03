@@ -12,7 +12,7 @@ jobs:
         id: getversion
         run: |
           pkg_name=$(grep -P 'version = \{attr = .*\}' pyproject.toml | grep -oP '\w+.__version__')
-          init_file="./src/${pkg_name//.__version__}/__init__.py"
+          init_file="./code/${pkg_name//.__version__}/__init__.py"
           new_tag=$(grep -Po '__version__ = "\K.*?(?=")' $init_file)
           echo "::set-output name=version::$new_tag"
       - name: Bump tag
