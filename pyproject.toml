@@ -33,7 +33,7 @@ dev = [
 ]
 
 [tool.setuptools.packages.find]
-where = ["code/src"]
+where = ["code"]
 
 [tool.setuptools.dynamic]
 version = {attr = "aind_ccf_reg.__version__"}
