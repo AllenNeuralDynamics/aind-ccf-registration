@@ -70,17 +70,17 @@ class RegSchema(ArgSchema):
         }
     )
 
-    fwd_transforms_file = Str(
+    affine_transforms_file = Str(
         metadata={
             "required":True, 
-            "description":"Output forward Transforms file",
+            "description":"Output forward affine Transforms file",
         }
     )
     
-    inv_transforms_file = Str(
+    warp_transforms_file = Str(
         metadata={
             "required":True, 
-            "description":"Output inverse Transforms file",
+            "description":"Output inverse warp Transforms file",
         }
     )
 
@@ -181,12 +181,12 @@ class Register(ArgSchemaParser):
             % (self.args["output_data"], self.args["reference_res"]),
         )
         shutil.copy(
-            reg12['fwdtransforms'][0], 
-            self.args['fwd_transforms_file'],
+            reg12['fwdtransforms'][1], 
+            self.args['affine_transforms_file'],
         )
         shutil.copy(
-            reg12['invtransforms'][0], 
-            self.args['inv_transforms_file'],
+            reg12['invtransforms'][1], 
+            self.args['warp_transforms_file'],
         )
 
         return str(image_path)
@@ -202,8 +202,8 @@ def main():
         "output_data": "/results/registered_to_atlas",
         "downsampled_file": "/results/downsampled.tiff",
         "downsampled16bit_file": "/results/downsampled_16.tiff",
-        "fwd_transforms_file": "/results/fwd_transforms.nii.gz",
-        "inv_transforms_file": "/results/inv_transforms.nii.gz",
+        "affine_transforms_file": "/results/affine_transforms.mat",
+        "warp_transforms_file": "/results/warp_transforms.nii.gz",
     }
 
     mod = Register(example_input)
