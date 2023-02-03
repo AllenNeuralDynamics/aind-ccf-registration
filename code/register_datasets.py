@@ -14,7 +14,6 @@ logger.setLevel(logging.INFO)
 
 
 def execute_command_helper(command: str, print_command: bool = False) -> None:
-
     """
     Execute a shell command.
 

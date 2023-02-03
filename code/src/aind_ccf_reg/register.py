@@ -3,6 +3,7 @@ CCF registration of an image to the Allen Institute's atlas
 """
 import logging
 import os
+import shutil
 from pathlib import Path
 from typing import Union
 
@@ -13,7 +14,6 @@ import zarr
 from argschema import ArgSchema, ArgSchemaParser
 from argschema.fields import Int, Str
 from skimage import io
-import shutil
 
 PathLike = Union[str, Path]
 
@@ -72,15 +72,15 @@ class RegSchema(ArgSchema):
 
     affine_transforms_file = Str(
         metadata={
-            "required":True, 
-            "description":"Output forward affine Transforms file",
+            "required": True,
+            "description": "Output forward affine Transforms file",
         }
     )
-    
+
     warp_transforms_file = Str(
         metadata={
-            "required":True, 
-            "description":"Output inverse warp Transforms file",
+            "required": True,
+            "description": "Output inverse warp Transforms file",
         }
     )
 
@@ -124,7 +124,6 @@ class Register(ArgSchemaParser):
         logger.info(f"Going to read zarr: {image_path}")
 
         if not os.path.isdir(str(image_path)):
-
             root_path = Path(self.args["input_data"]).joinpath(
                 self.args["input_zarr_directory"]
             )
@@ -181,12 +180,12 @@ class Register(ArgSchemaParser):
             % (self.args["output_data"], self.args["reference_res"]),
         )
         shutil.copy(
-            reg12['fwdtransforms'][1], 
-            self.args['affine_transforms_file'],
+            reg12["fwdtransforms"][1],
+            self.args["affine_transforms_file"],
         )
         shutil.copy(
-            reg12['invtransforms'][1], 
-            self.args['warp_transforms_file'],
+            reg12["invtransforms"][1],
+            self.args["warp_transforms_file"],
         )
 
         return str(image_path)
