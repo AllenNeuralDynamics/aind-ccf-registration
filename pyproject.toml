@@ -28,8 +28,7 @@ dev = [
   'flake8',
   'interrogate',
   'isort',
-  'Sphinx',
-  'pygit2'
+  'Sphinx'
 ]
 
 [tool.setuptools.packages.find]
