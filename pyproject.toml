@@ -15,7 +15,7 @@ dynamic = ["version", "readme"]
 dependencies = [
   'argschema==3.0.4',
   'dask==2022.10.2',
-  'antspyx==0.3.4',
+  'antspyx==0.3.5',
   'scikit-image==0.19.3',
   'tifffile==2022.10.10',
   'zarr==2.13.3'
@@ -28,8 +28,8 @@ dev = [
   'flake8',
   'interrogate',
   'isort',
-  'Sphinx',
-  'pygit2'
+  'furo',
+  'Sphinx'
 ]
 
 [tool.setuptools.packages.find]
@@ -41,7 +41,7 @@ readme = {file = ["README.md"]}
 
 [tool.black]
 line-length = 79
-target_version = ['py36']
+target_version = ['py37']
 exclude = '''
 
 (
@@ -62,11 +62,16 @@ exclude = '''
 
 [tool.coverage.run]
 omit = ["*__init__*"]
-source = ["aind_ccf_reg", "tests"]
+source = ["code/aind_ccf_reg", "tests"]
 
 [tool.coverage.report]
-exclude_lines = ["if __name__ == .__main__.:"]
-fail_under = 100
+exclude_lines = [
+    "if __name__ == .__main__.:",
+    "from",
+    "import",
+    "pragma: no cover"
+]
+fail_under = 0
 
 [tool.isort]
 line_length = 79

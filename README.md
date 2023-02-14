@@ -1,4 +1,4 @@
-# library-repo-template
+# aind-ccf-registration
 
 [![License](https://img.shields.io/badge/license-MIT-brightgreen)](LICENSE)
 ![Code Style](https://img.shields.io/badge/code%20style-black-black)
@@ -70,7 +70,7 @@ where scope (optional) describes the packages affected by the code changes and t
 ### Documentation
 To generate the rst files source files for documentation, run
 ```
-sphinx-apidoc -o doc_template/source/ src 
+sphinx-apidoc -o doc_template/source/ code
 ```
 Then to create the documentation html files, run
 ```
