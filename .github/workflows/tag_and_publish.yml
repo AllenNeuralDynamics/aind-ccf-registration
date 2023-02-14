@@ -13,7 +13,7 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v3
       with:
-        ref: ${{ inputs.default_branch }}
+        ref: main
         fetch-depth: 0
         token: ${{ secrets.SERVICE_TOKEN }}
     - name: Bump version and push tag
@@ -21,7 +21,7 @@ jobs:
       uses: mathieudutour/github-tag-action@v6.1
       with:
         github_token: ${{ secrets.SERVICE_TOKEN }}
-        release_branches: ${{ inputs.default_branch }}
+        release_branches: main
         default_bump: patch
     - name: Get version file name set variables
       run: |
