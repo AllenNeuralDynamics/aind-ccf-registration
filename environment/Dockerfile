@@ -13,6 +13,11 @@ RUN pip install -U --no-cache-dir \
     s3fs==2022.11.0 \
     scikit-image==0.19.3 \
     tifffile==2022.10.10 \
-    zarr==2.13.3
+    zarr==2.13.3 \
+    aind-data-schema==0.12.3 \
+    dask[distributed]==2022.11.1 \
+    git+https://github.com/AllenNeuralDynamics/ome-zarr-py.git@feature/delayed-dask-poc \
+    aicsimageio@git+https://github.com/camilolaiton/aicsimageio.git@feature/zarrwriter-multiscales-daskjobs \
+    xarray_multiscale==1.1.0
 
 RUN conda install -c conda-forge awscli
