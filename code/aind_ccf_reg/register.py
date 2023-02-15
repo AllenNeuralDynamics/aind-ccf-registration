@@ -189,7 +189,7 @@ class Register(ArgSchemaParser):
 
     default_schema = RegSchema
 
-    def __read_zarr_image(self, image_path: PathLike) -> np.array:
+    def read_zarr_image(self, image_path: PathLike) -> np.array:
         """
         Reads a zarr image
 
@@ -421,7 +421,7 @@ class Register(ArgSchemaParser):
             )
 
         start_date_time = datetime.now()
-        img_array = self.__read_zarr_image(image_path)
+        img_array = self.read_zarr_image(image_path)
         end_date_time = datetime.now()
 
         data_processes.append(
