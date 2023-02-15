@@ -9,15 +9,15 @@ COPY git-askpass /
 RUN pip install -U --no-cache-dir \
     antspyx==0.3.7 \
     argschema==3.0.4 \
-    dask==2022.10.2 \
     s3fs==2022.11.0 \
     scikit-image==0.19.3 \
     tifffile==2022.10.10 \
+    bokeh==2.4.2 \
     zarr==2.13.3 \
     aind-data-schema==0.12.3 \
+    xarray_multiscale==1.1.0 \
     dask[distributed]==2022.11.1 \
     git+https://github.com/AllenNeuralDynamics/ome-zarr-py.git@feature/delayed-dask-poc \
-    aicsimageio@git+https://github.com/camilolaiton/aicsimageio.git@feature/zarrwriter-multiscales-daskjobs \
-    xarray_multiscale==1.1.0
+    aicsimageio@git+https://github.com/camilolaiton/aicsimageio.git@feature/zarrwriter-multiscales-daskjobs
 
 RUN conda install -c conda-forge awscli

@@ -20,10 +20,12 @@ from aicsimageio.writers import OmeZarrWriter
 from aind_data_schema.processing import DataProcess
 from argschema import ArgSchema, ArgSchemaParser
 from argschema.fields import Int, Str
+from argschema.fields import Dict as sch_dict
 from dask.distributed import Client, LocalCluster, performance_report
 from distributed import wait
 from numcodecs import blosc
 from skimage import io
+import dask.array as da
 
 from .__init__ import __version__
 from .utils import create_folder, generate_processing
@@ -152,6 +154,22 @@ class RegSchema(ArgSchema):
         metadata={"required": True, "description": "Output file"}
     )
 
+    code_url = Str(
+        metadata={"required": True, "description": "CCF registration URL"}
+    )
+
+    metadata_folder = Str(
+        metadata={"required": True, "description": "Metadata folder"}
+    )
+
+    OMEZarr_params = sch_dict(
+        metadata={"required": True, "description": "OMEZarr writing parameters"}
+    )
+    
+    ants_params = sch_dict(
+        metadata={"required": True, "description": "ants registering parameters"}
+    )
+
     downsampled_file = Str(
         metadata={"required": True, "description": "Downsampled file"}
     )
@@ -189,7 +207,7 @@ class Register(ArgSchemaParser):
 
     default_schema = RegSchema
 
-    def read_zarr_image(self, image_path: PathLike) -> np.array:
+    def __read_zarr_image(self, image_path: PathLike) -> np.array:
         """
         Reads a zarr image
 
@@ -240,20 +258,20 @@ class Register(ArgSchemaParser):
         downsampled_file_path = Path(
             f"{self.args['metadata_folder']}/{self.args['downsampled_file']}"
         )
-        ants.image_write(fillin, downsampled_file_path)
+        ants.image_write(fillin, str(downsampled_file_path))
 
         # convert data to uint16
-        im = io.imread(downsampled_file_path).astype(np.uint16)
+        im = io.imread(str(downsampled_file_path)).astype(np.uint16)
 
         downsampled16bit_file_path = Path(
             f"{self.args['metadata_folder']}/{self.args['downsampled16bit_file']}"
         )
 
-        tifffile.imwrite(downsampled16bit_file_path, im)
+        tifffile.imwrite(str(downsampled16bit_file_path), im)
         # read images
         logger.info("Reading reference image")
         img1 = ants.image_read(self.args["reference"])
-        img2 = ants.image_read(downsampled16bit_file_path)
+        img2 = ants.image_read(str(downsampled16bit_file_path))
 
         # register with ants
         reg12 = ants.registration(
@@ -270,7 +288,7 @@ class Register(ArgSchemaParser):
             self.args["warp_transforms_file"],
         )
 
-        return reg12["warpedmovout"]
+        return reg12["warpedmovout"].numpy()
 
     def write_zarr(
         self,
@@ -285,7 +303,7 @@ class Register(ArgSchemaParser):
 
         Parameters
         ------------
-        img_array: np.array
+        img_array: dask.Array.core
             Array with the registered image
 
         physical_pixel_sizes: List[int]
@@ -332,7 +350,7 @@ class Register(ArgSchemaParser):
 
         scale_axis = [2, 2, 2]
         pyramid_data = compute_pyramid(
-            dask.from_array(img_array),
+            img_array,
             -1,
             scale_axis,
             self.args["OMEZarr_params"]["chunks"],
@@ -421,7 +439,7 @@ class Register(ArgSchemaParser):
             )
 
         start_date_time = datetime.now()
-        img_array = self.read_zarr_image(image_path)
+        img_array = self.__read_zarr_image(image_path)
         end_date_time = datetime.now()
 
         data_processes.append(
@@ -474,9 +492,10 @@ class Register(ArgSchemaParser):
                 shuffle=blosc.SHUFFLE,
             )
         }
-
+        
+        aligned_image_dask = da.from_array(aligned_image)
         self.write_zarr(
-            img_array=aligned_image,
+            img_array=aligned_image_dask, # dask array
             physical_pixel_sizes=ants_params["new_spacing"],
             output_path=self.args["output_data"],
             image_name=image_name,
@@ -492,7 +511,7 @@ class Register(ArgSchemaParser):
                 end_date_time=end_date_time,
                 input_location="In memory array",
                 output_location=str(
-                    Path(self.args["output_data"].joinpath(image_name))
+                    Path(self.args["output_data"]).joinpath(image_name)
                 ),
                 code_url="https://github.com/camilolaiton/aicsimageio.git@feature/zarrwriter-multiscales-daskjobs",
                 parameters={
@@ -502,12 +521,16 @@ class Register(ArgSchemaParser):
                 notes="Converting registered image to OMEZarr",
             )
         )
-
+        
+        processing_path = Path(self.args["metadata_folder"]).joinpath(
+            "processing.json"
+        )
+        
+        logger.info(f"Writing processing: {processing_path}")
+        
         generate_processing(
             data_processes=data_processes,
-            dest_processing=Path(self.args["metadata_folder"]).joinpath(
-                "processing.json"
-            ),
+            dest_processing=processing_path,
             pipeline_version=__version__,
         )
 

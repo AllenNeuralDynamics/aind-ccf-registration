@@ -67,7 +67,7 @@ def main() -> None:
     """
     image_path = register.main()
     bucket_path = "aind-open-data"
-
+    
     output_folder = "/results"
     print(f"Bucket path: {bucket_path} - Output path: {output_folder}")
     # Copying output to bucket
@@ -75,7 +75,7 @@ def main() -> None:
     dataset_folder = str(sys.argv[2]).replace("/data/", "")
     channel_name = image_path.split("/")[-2].replace(".zarr", "")
     dataset_name = (
-        dataset_folder + f"/processed/CCF_Atlas_Registration_{channel_name}"
+        dataset_folder + f"/processed/CCF_Atlas_Registration/{channel_name}"
     )
     s3_path = f"s3://{bucket_path}/{dataset_name}"
 
