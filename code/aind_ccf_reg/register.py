@@ -11,6 +11,7 @@ from typing import Dict, Hashable, List, Sequence, Tuple, Union
 
 import ants
 import dask
+import dask.array as da
 import numpy as np
 import tifffile
 import xarray_multiscale
@@ -19,13 +20,12 @@ from aicsimageio.types import PhysicalPixelSizes
 from aicsimageio.writers import OmeZarrWriter
 from aind_data_schema.processing import DataProcess
 from argschema import ArgSchema, ArgSchemaParser
-from argschema.fields import Int, Str
 from argschema.fields import Dict as sch_dict
+from argschema.fields import Int, Str
 from dask.distributed import Client, LocalCluster, performance_report
 from distributed import wait
 from numcodecs import blosc
 from skimage import io
-import dask.array as da
 
 from .__init__ import __version__
 from .utils import create_folder, generate_processing
@@ -163,11 +163,17 @@ class RegSchema(ArgSchema):
     )
 
     OMEZarr_params = sch_dict(
-        metadata={"required": True, "description": "OMEZarr writing parameters"}
+        metadata={
+            "required": True,
+            "description": "OMEZarr writing parameters",
+        }
     )
-    
+
     ants_params = sch_dict(
-        metadata={"required": True, "description": "ants registering parameters"}
+        metadata={
+            "required": True,
+            "description": "ants registering parameters",
+        }
     )
 
     downsampled_file = Str(
@@ -280,12 +286,10 @@ class Register(ArgSchemaParser):
 
         # output
         shutil.copy(
-            reg12["fwdtransforms"][1],
-            self.args["affine_transforms_file"],
+            reg12["fwdtransforms"][1], self.args["affine_transforms_file"],
         )
         shutil.copy(
-            reg12["invtransforms"][1],
-            self.args["warp_transforms_file"],
+            reg12["invtransforms"][1], self.args["warp_transforms_file"],
         )
 
         return reg12["warpedmovout"].numpy()
@@ -350,10 +354,7 @@ class Register(ArgSchemaParser):
 
         scale_axis = [2, 2, 2]
         pyramid_data = compute_pyramid(
-            img_array,
-            -1,
-            scale_axis,
-            self.args["OMEZarr_params"]["chunks"],
+            img_array, -1, scale_axis, self.args["OMEZarr_params"]["chunks"],
         )
 
         pyramid_data = [pad_array_n_d(pyramid) for pyramid in pyramid_data]
@@ -492,10 +493,10 @@ class Register(ArgSchemaParser):
                 shuffle=blosc.SHUFFLE,
             )
         }
-        
+
         aligned_image_dask = da.from_array(aligned_image)
         self.write_zarr(
-            img_array=aligned_image_dask, # dask array
+            img_array=aligned_image_dask,  # dask array
             physical_pixel_sizes=ants_params["new_spacing"],
             output_path=self.args["output_data"],
             image_name=image_name,
@@ -521,13 +522,13 @@ class Register(ArgSchemaParser):
                 notes="Converting registered image to OMEZarr",
             )
         )
-        
+
         processing_path = Path(self.args["metadata_folder"]).joinpath(
             "processing.json"
         )
-        
+
         logger.info(f"Writing processing: {processing_path}")
-        
+
         generate_processing(
             data_processes=data_processes,
             dest_processing=processing_path,

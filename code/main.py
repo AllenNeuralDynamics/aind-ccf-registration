@@ -67,7 +67,7 @@ def main() -> None:
     """
     image_path = register.main()
     bucket_path = "aind-open-data"
-    
+
     output_folder = "/results"
     print(f"Bucket path: {bucket_path} - Output path: {output_folder}")
     # Copying output to bucket
