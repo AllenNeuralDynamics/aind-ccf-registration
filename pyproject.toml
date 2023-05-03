@@ -15,7 +15,7 @@ dynamic = ["version", "readme"]
 dependencies = [
   'argschema==3.0.4',
   'dask==2022.10.2',
-  'antspyx==0.3.5',
+  'antspyx==0.3.7',
   'scikit-image==0.19.3',
   'tifffile==2022.10.10',
   'zarr==2.13.3'
