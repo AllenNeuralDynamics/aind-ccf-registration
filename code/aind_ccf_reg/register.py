@@ -159,6 +159,11 @@ class RegSchema(ArgSchema):
         metadata={"description": "Amazon Bucket or Google Bucket name"},
     )
 
+    bucket_path = Str(
+        required=True,
+        metadata={"description": "Amazon Bucket or Google Bucket name"},
+    )
+
     code_url = Str(
         metadata={"required": True, "description": "CCF registration URL"}
     )

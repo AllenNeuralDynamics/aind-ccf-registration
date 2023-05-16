@@ -3,7 +3,19 @@
 [![License](https://img.shields.io/badge/license-MIT-brightgreen)](LICENSE)
 ![Code Style](https://img.shields.io/badge/code%20style-black-black)
 
-Template for a minimal, basic repository for an AIND library.
+Source code to register SmartSPIM datasets to the CCF Allen Atlas.
+
+This module is part of a pipeline. Therefore, it assumes that the
+fused image comes in OME-Zarr format with different multiscales.
+At this point, we are using ANTS for the image registration and it's
+not possible to use the original resolution of the data. In consequence,
+we are using the 3rd multiscale from the original resolution.
+
+$$resX=origResX*(2^m)$$
+$$resY=origResY*(2^m)$$
+$$resZ=origResZ*(2^m)$$
+
+Where $$m$$ is the provided multiscale. By default, we are using the 3rd. Afterwards, we resample the image to match the $$25um$$ microns space and then, we register the resulting image to the Allen CCF atlas.
 
 ## Installation
 To use the software, in the root directory, run
@@ -15,6 +27,9 @@ To develop the code, run
 ```
 pip install -e .[dev]
 ```
+
+In Code Ocean, it is necessary to create 5 text parameters:
+1. input_data: This parameter
 
 ## Contributing
 
