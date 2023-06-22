@@ -1,5 +1,5 @@
 metadata_version: 1
-name: SmartSPIM CCF Registration Capsule
+name: Pipeline Version - SmartSPIM CCF Registration Capsule
 description: A tool for automated registration of lightsheet image volumes to the
   Allen V3 CCF template
 tags:

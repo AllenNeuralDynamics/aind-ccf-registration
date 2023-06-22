@@ -3,6 +3,7 @@
 [![License](https://img.shields.io/badge/license-MIT-brightgreen)](LICENSE)
 ![Code Style](https://img.shields.io/badge/code%20style-black-black)
 
+This version is compatible with the Code Ocean Pipeline feature.
 Source code to register SmartSPIM datasets to the CCF Allen Atlas.
 
 This module is part of a pipeline. Therefore, it assumes that the

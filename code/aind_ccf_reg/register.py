@@ -6,6 +6,7 @@ import multiprocessing
 import os
 import shutil
 from datetime import datetime
+from glob import glob
 from pathlib import Path
 from typing import Dict, Hashable, List, Sequence, Tuple, Union
 
@@ -129,17 +130,15 @@ class RegSchema(ArgSchema):
     Schema format for Registration.
     """
 
-    input_data = Str(metadata={"required": True, "description": "Input data"})
+    input_data = Str(
+        metadata={
+            "required": True,
+            "description": "Input data without timestamp",
+        }
+    )
 
     input_channel = Str(
         metadata={"required": True, "description": "Channel to register"}
-    )
-
-    input_zarr_directory = Str(
-        metadata={
-            "required": True,
-            "description": "directory with Ome zarr data",
-        }
     )
 
     input_scale = Int(
@@ -152,11 +151,6 @@ class RegSchema(ArgSchema):
 
     output_data = Str(
         metadata={"required": True, "description": "Output file"}
-    )
-    
-    bucket_path = Str(
-        required=True,
-        metadata={"description": "Amazon Bucket or Google Bucket name"},
     )
 
     bucket_path = Str(
@@ -286,7 +280,7 @@ class Register(ArgSchemaParser):
         tifffile.imwrite(str(downsampled16bit_file_path), im)
         # read images
         logger.info("Reading reference image")
-        img1 = ants.image_read(self.args["reference"])
+        img1 = ants.image_read(os.path.abspath(self.args["reference"]))
         img2 = ants.image_read(str(downsampled16bit_file_path))
 
         # register with ants
@@ -296,10 +290,12 @@ class Register(ArgSchemaParser):
 
         # output
         shutil.copy(
-            reg12["fwdtransforms"][1], self.args["affine_transforms_file"],
+            reg12["fwdtransforms"][1],
+            self.args["affine_transforms_file"],
         )
         shutil.copy(
-            reg12["invtransforms"][1], self.args["warp_transforms_file"],
+            reg12["invtransforms"][1],
+            self.args["warp_transforms_file"],
         )
 
         return reg12["warpedmovout"].numpy()
@@ -335,7 +331,7 @@ class Register(ArgSchemaParser):
             options for the zarr image
         """
 
-        dask_folder = Path("/root/capsule/scratch")
+        dask_folder = Path("../scratch")
         # Setting dask configuration
         dask.config.set(
             {
@@ -364,7 +360,10 @@ class Register(ArgSchemaParser):
 
         scale_axis = [2, 2, 2]
         pyramid_data = compute_pyramid(
-            img_array, -1, scale_axis, self.args["OMEZarr_params"]["chunks"],
+            img_array,
+            -1,
+            scale_axis,
+            self.args["OMEZarr_params"]["chunks"],
         )
 
         pyramid_data = [pad_array_n_d(pyramid) for pyramid in pyramid_data]
@@ -417,22 +416,30 @@ class Register(ArgSchemaParser):
         """
 
         # Creating output folders
-        create_folder(self.args["output_data"])
-        create_folder(self.args["metadata_folder"])
+        input_data_path = os.path.abspath(self.args["input_data"])
+        output_data_path = os.path.abspath(self.args["output_data"])
+        metadata_path = os.path.abspath(self.args["metadata_folder"])
+        reference_path = os.path.abspath(self.args["reference"])
+        # input_data_path = glob(f"{input_data_path}_stitched_*/")[0]
+
+        logger.info(
+            f"Input data: {input_data_path}\nOutput data: {output_data_path}\nMetadata path: {metadata_path} reference: {reference_path}"
+        )
+
+        create_folder(output_data_path)
+        create_folder(metadata_path)
 
         # read input data (lazy loading)
         # flake8: noqa: E501
-        image_path = Path(self.args["input_data"]).joinpath(
-            f"{self.args['input_zarr_directory']}/{self.args['input_channel']}/{self.args['input_scale']}"
+        image_path = Path(input_data_path).joinpath(
+            f"{self.args['input_channel']}.zarr/{self.args['input_scale']}"
         )
         logger.info(f"Going to read zarr: {image_path}")
 
         data_processes = []
 
         if not os.path.isdir(str(image_path)):
-            root_path = Path(self.args["input_data"]).joinpath(
-                self.args["input_zarr_directory"]
-            )
+            root_path = Path(input_data_path)
             channels = [
                 folder
                 for folder in os.listdir(root_path)
@@ -475,7 +482,7 @@ class Register(ArgSchemaParser):
             self.args["reference_res"],
             self.args["reference_res"],
         )
-        ants_params["reference"] = self.args["reference"]
+        ants_params["reference"] = reference_path
         aligned_image = self.atlas_alignment(img_array, ants_params)
         end_date_time = datetime.now()
 
@@ -508,7 +515,7 @@ class Register(ArgSchemaParser):
         self.write_zarr(
             img_array=aligned_image_dask,  # dask array
             physical_pixel_sizes=ants_params["new_spacing"],
-            output_path=self.args["output_data"],
+            output_path=output_data_path,
             image_name=image_name,
             opts=opts,
         )
@@ -522,7 +529,7 @@ class Register(ArgSchemaParser):
                 end_date_time=end_date_time,
                 input_location="In memory array",
                 output_location=str(
-                    Path(self.args["output_data"]).joinpath(image_name)
+                    Path(output_data_path).joinpath(image_name)
                 ),
                 code_url="https://github.com/camilolaiton/aicsimageio.git@feature/zarrwriter-multiscales-daskjobs",
                 parameters={
@@ -533,9 +540,7 @@ class Register(ArgSchemaParser):
             )
         )
 
-        processing_path = Path(self.args["metadata_folder"]).joinpath(
-            "processing.json"
-        )
+        processing_path = Path(metadata_path).joinpath("processing.json")
 
         logger.info(f"Writing processing: {processing_path}")
 
@@ -548,29 +553,12 @@ class Register(ArgSchemaParser):
         return str(image_path)
 
 
-def main():
+def main(input_config: dict):
     """
     Main function to execute
     """
-    example_input = {
-        "reference": "/data/reference.tiff",
-        "reference_res": 25,
-        "output_data": "/results/OMEZarr",
-        "metadata_folder": "/results/metadata",
-        "downsampled_file": "downsampled.tiff",
-        "downsampled16bit_file": "downsampled_16.tiff",
-        "affine_transforms_file": "/results/affine_transforms.mat",
-        "warp_transforms_file": "/results/warp_transforms.nii.gz",
-        "code_url": "https://github.com/AllenNeuralDynamics/aind-ccf-registration",
-        "ants_params": {"spacing": (14.4, 14.4, 16), "unit": "microns"},
-        "OMEZarr_params": {
-            "clevel": 1,
-            "compressor": "zstd",
-            "chunks": (64, 64, 64),
-        },
-    }
 
-    mod = Register(example_input)
+    mod = Register(input_config)
     return mod.run()
 
 
