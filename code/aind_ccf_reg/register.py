@@ -153,7 +153,7 @@ class RegSchema(ArgSchema):
     output_data = Str(
         metadata={"required": True, "description": "Output file"}
     )
-    
+
     bucket_path = Str(
         required=True,
         metadata={"description": "Amazon Bucket or Google Bucket name"},
@@ -377,7 +377,10 @@ class Register(ArgSchemaParser):
 
         scale_axis = [2, 2, 2]
         pyramid_data = compute_pyramid(
-            img_array, -1, scale_axis, self.args["OMEZarr_params"]["chunks"],
+            img_array,
+            -1,
+            scale_axis,
+            self.args["OMEZarr_params"]["chunks"],
         )
 
         pyramid_data = [pad_array_n_d(pyramid) for pyramid in pyramid_data]
