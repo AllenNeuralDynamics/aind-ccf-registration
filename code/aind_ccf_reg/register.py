@@ -153,7 +153,7 @@ class RegSchema(ArgSchema):
     output_data = Str(
         metadata={"required": True, "description": "Output file"}
     )
-    
+
     bucket_path = Str(
         required=True,
         metadata={"description": "Amazon Bucket or Google Bucket name"},
@@ -208,10 +208,17 @@ class RegSchema(ArgSchema):
         }
     )
 
-    warp_transforms_file = Str(
+    ls_ccf_warp_transforms_file = Str(
         metadata={
             "required": True,
             "description": "Output inverse warp Transforms file",
+        }
+    )
+
+    ccf_ls_warp_transforms_file = Str(
+        metadata={
+            "required": True,
+            "description": "Output forward warp Transforms file",
         }
     )
 
@@ -296,10 +303,16 @@ class Register(ArgSchemaParser):
 
         # output
         shutil.copy(
-            reg12["fwdtransforms"][1], self.args["affine_transforms_file"],
+            reg12["fwdtransforms"][0],
+            self.args["ccf_ls_warp_transforms_file"],
         )
         shutil.copy(
-            reg12["invtransforms"][1], self.args["warp_transforms_file"],
+            reg12["fwdtransforms"][1],
+            self.args["affine_transforms_file"],
+        )
+        shutil.copy(
+            reg12["invtransforms"][1],
+            self.args["ls_ccf_warp_transforms_file"],
         )
 
         return reg12["warpedmovout"].numpy()
@@ -364,7 +377,10 @@ class Register(ArgSchemaParser):
 
         scale_axis = [2, 2, 2]
         pyramid_data = compute_pyramid(
-            img_array, -1, scale_axis, self.args["OMEZarr_params"]["chunks"],
+            img_array,
+            -1,
+            scale_axis,
+            self.args["OMEZarr_params"]["chunks"],
         )
 
         pyramid_data = [pad_array_n_d(pyramid) for pyramid in pyramid_data]
@@ -560,7 +576,8 @@ def main():
         "downsampled_file": "downsampled.tiff",
         "downsampled16bit_file": "downsampled_16.tiff",
         "affine_transforms_file": "/results/affine_transforms.mat",
-        "warp_transforms_file": "/results/warp_transforms.nii.gz",
+        "ls_ccf_warp_transforms_file": "/results/ls_ccf_warp_transforms.nii.gz",
+        "ccf_ls_warp_transforms_file": "/results/ccf_ls_warp_transforms.nii.gz",
         "code_url": "https://github.com/AllenNeuralDynamics/aind-ccf-registration",
         "ants_params": {"spacing": (14.4, 14.4, 16), "unit": "microns"},
         "OMEZarr_params": {
