@@ -6,8 +6,13 @@ ARG GIT_ASKPASS
 ARG GIT_ACCESS_TOKEN
 COPY git-askpass /
 
+RUN conda create -n ccf_reg python=3.8
+
+# Make RUN commands use the new environment:
+SHELL ["conda", "run", "-n", "ccf_reg", "/bin/bash", "-c"]
+
 RUN pip install -U --no-cache-dir \
-    antspyx==0.3.7 \
+    antspyx==0.3.8 \
     argschema==3.0.4 \
     s3fs==2022.11.0 \
     scikit-image==0.19.3 \
