@@ -202,10 +202,17 @@ class RegSchema(ArgSchema):
         }
     )
 
-    warp_transforms_file = Str(
+    ls_ccf_warp_transforms_file = Str(
         metadata={
             "required": True,
             "description": "Output inverse warp Transforms file",
+        }
+    )
+
+    ccf_ls_warp_transforms_file = Str(
+        metadata={
+            "required": True,
+            "description": "Output forward warp Transforms file",
         }
     )
 
@@ -290,12 +297,16 @@ class Register(ArgSchemaParser):
 
         # output
         shutil.copy(
+            reg12["fwdtransforms"][0],
+            self.args["ccf_ls_warp_transforms_file"],
+        )
+        shutil.copy(
             reg12["fwdtransforms"][1],
             self.args["affine_transforms_file"],
         )
         shutil.copy(
             reg12["invtransforms"][1],
-            self.args["warp_transforms_file"],
+            self.args["ls_ccf_warp_transforms_file"],
         )
 
         return reg12["warpedmovout"].numpy()

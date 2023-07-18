@@ -6,7 +6,6 @@ import json
 import logging
 import os
 import subprocess
-import sys
 from glob import glob
 
 from aind_ccf_reg import register
@@ -145,6 +144,12 @@ def main() -> None:
         "warp_transforms_file": os.path.abspath(
             f"{results_folder}/warp_transforms.nii.gz"
         ),
+        "ls_ccf_warp_transforms_file": os.path.abspath(
+            f"{results_folder}/ls_ccf_warp_transforms.nii.gz"
+        ),
+        "ccf_ls_warp_transforms_file": os.path.abspath(
+            f"{results_folder}/ccf_ls_warp_transforms.nii.gz"
+        ),
         "code_url": "https://github.com/AllenNeuralDynamics/aind-ccf-registration",
         "ants_params": {"spacing": (14.4, 14.4, 16), "unit": "microns"},
         "OMEZarr_params": {
@@ -155,6 +160,7 @@ def main() -> None:
     }
 
     logger.info(f"Input parameters in CCF run: {example_input}")
+    # flake8: noqa: F841
     image_path = register.main(example_input)
 
 
