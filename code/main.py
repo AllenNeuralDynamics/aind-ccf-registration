@@ -141,9 +141,6 @@ def main() -> None:
         "affine_transforms_file": os.path.abspath(
             f"{results_folder}/affine_transforms.mat"
         ),
-        "warp_transforms_file": os.path.abspath(
-            f"{results_folder}/warp_transforms.nii.gz"
-        ),
         "ls_ccf_warp_transforms_file": os.path.abspath(
             f"{results_folder}/ls_ccf_warp_transforms.nii.gz"
         ),
