@@ -2,6 +2,8 @@
 File for utilities
 """
 import os
+import numpy as np
+
 from pathlib import Path
 from typing import List, Optional, Union
 
@@ -86,3 +88,61 @@ def create_folder(dest_dir: PathLike, verbose: Optional[bool] = False) -> None:
         except OSError as e:
             if e.errno != os.errno.EEXIST:
                 raise
+
+def check_orientation(img: np.array, params: dict, orientations: dict):
+    """
+    Checks aquisition orientation an makes sure it is aligned to the CCF. The
+    CCF orientation is:
+        - superior_to_inferior
+        - left_to_right
+        - anterior_to_posterior
+
+    Parameters
+    ----------
+    img : np.array
+        The raw image in its aquired orientatin
+    params : dict
+        The orientation information from processing_manifest.json
+    orientations: dict
+        The axis order of the CCF reference atals
+
+    Returns
+    -------
+    img_out : np.array
+        The raw image oriented to the CCF
+    """
+    
+    orient_mat= np.zeros((3,3))
+    acronym = ['', '', '']
+    
+    
+    for k, vals in enumerate(params):
+        direction = vals['direction'].lower()
+        dim = vals['dimension']
+        if direction in orientations.keys():
+            ref_axis = orientations[direction]
+            orient_mat[dim, ref_axis] = 1
+            acronym[dim] = direction[0]
+        else: 
+            direction_flip = '_'.join(direction.split('_')[::-1])
+            ref_axis = orientations[direction_flip]
+            orient_mat[dim, ref_axis] = -1
+            acronym[dim] = direction[0]
+    
+    #check because there was a bug that allowed for invalid spl orientation
+    #all vals should be postitive so just taking absolute value of matrix
+    if "".join(acronym) == 'spl':
+        orient_mat = abs(orient_mat)
+        
+    
+    original, swapped = np.where(orient_mat)
+    img_out = np.moveaxis(img, original, swapped)
+    
+    out_mat = orient_mat[:, swapped]
+    for c, row in enumerate(orient_mat.T):
+        val = np.where(row)[0][0]
+        if row[val] == -1:
+            img_out = np.flip(img_out, c)
+            out_mat[val, val] *= -1
+            
+    return img_out, orient_mat, out_mat
