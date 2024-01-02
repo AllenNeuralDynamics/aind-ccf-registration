@@ -118,6 +118,10 @@ def main() -> None:
         raise ValueError("Processing manifest path does not exist!")
 
     pipeline_config = read_json_as_dict(processing_manifest_path)
+    pipeline_config = pipeline_config.get("pipeline_processing")
+
+    if pipeline_config is None:
+        raise ValueError("Please, provide a valid processing manifest")
 
     logger.info(
         f"Processing manifest {pipeline_config} provided in path {processing_manifest_path}"
