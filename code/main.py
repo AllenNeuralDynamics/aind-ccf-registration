@@ -163,6 +163,7 @@ def main() -> None:
         "input_data": "../data/fused",
         "input_channel": channel_to_register,
         "input_scale": pipeline_config["registration"]["input_scale"],
+        "input_orientation": pipeline_config["axes"],
         "bucket_path": "aind-open-data",
         "reference": os.path.abspath(
             "../data/ccf_atlas_image/ccf_atlas_reference_25_um.tiff"
@@ -182,7 +183,14 @@ def main() -> None:
             f"{results_folder}/ccf_ls_warp_transforms.nii.gz"
         ),
         "code_url": "https://github.com/AllenNeuralDynamics/aind-ccf-registration",
-        "ants_params": {"spacing": (14.4, 14.4, 16), "unit": "microns"},
+        "ants_params": {"spacing": (14.4, 14.4, 16),
+                        "unit": "microns",
+                        "orientations": {
+                            "left_to_right": 0,
+                            "superior_to_inferior": 1,
+                            "anterior_to_posterior": 2,
+                        }
+        },
         "OMEZarr_params": {
             "clevel": 1,
             "compressor": "zstd",

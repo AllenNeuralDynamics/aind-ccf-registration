@@ -22,6 +22,7 @@ from aicsimageio.writers import OmeZarrWriter
 from aind_data_schema.core.processing import DataProcess, ProcessName
 from argschema import ArgSchema, ArgSchemaParser
 from argschema.fields import Dict as sch_dict
+from argschema.fields import List as sch_list
 from argschema.fields import Int, Str
 from dask.distributed import Client, LocalCluster, performance_report
 from distributed import wait
@@ -30,7 +31,7 @@ from skimage import io
 
 from . import utils
 from .__init__ import __version__
-from .utils import create_folder, generate_processing
+from .utils import create_folder, generate_processing, check_orientation
 
 blosc.use_threads = False
 PathLike = Union[str, Path]
@@ -144,6 +145,14 @@ class RegSchema(ArgSchema):
 
     input_scale = Int(
         metadata={"required": True, "description": "Zarr scale to start with"}
+    )
+    
+    input_orientation = sch_list(
+        cls_or_instance = sch_dict,
+        metadata={
+            "required": True, 
+            "description": "Brain orientation during aquisition"
+        }
     )
 
     reference = Str(
@@ -262,12 +271,18 @@ class Register(ArgSchemaParser):
         """
         # get data orientation
         img_array = img_array.astype(np.double)
-        img_array = np.swapaxes(img_array, 0, 2)
-        img_array = np.swapaxes(img_array, 1, 2)
-        img_array = np.flip(img_array, 2)
+        img_out, in_mat, out_mat = check_orientation(
+            img_array, 
+            self.args["input_orientation"],
+            self.args["ants_params"]["orientations"]
+            )
+        
+        logger.info(f"Input image dimensions: {img_array.shape} \nInput image orientation: {in_mat}")
+        logger.info(f"Output image dimensions: {img_out.shape} \nOutput image orientation: {out_mat}")
+
 
         # convert input data to tiff into reference voxel resolution
-        ants_img = ants.from_numpy(img_array, spacing=ants_params["spacing"])
+        ants_img = ants.from_numpy(img_out, spacing=ants_params["spacing"])
         fillin = ants.resample_image(
             ants_img, ants_params["new_spacing"], False, 1
         )
