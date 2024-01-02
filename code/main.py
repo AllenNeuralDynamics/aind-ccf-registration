@@ -160,7 +160,7 @@ def main() -> None:
     logger.info(f"{'='*40} SmartSPIM CCF Registration {'='*40}")
 
     example_input = {
-        "input_data": "../data/SmartSPIM_695464_2023-10-18_20-30-30_stitched_2023-11-01_00-47-53/image_tile_fusing/OMEZarr",
+        "input_data": "../data/fused",
         "input_channel": channel_to_register,
         "input_scale": pipeline_config["registration"]["input_scale"],
         "bucket_path": "aind-open-data",
