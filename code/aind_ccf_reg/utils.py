@@ -4,6 +4,7 @@ File for utilities
 import logging
 import multiprocessing
 import os
+import platform
 import time
 from datetime import datetime
 from pathlib import Path
@@ -82,7 +83,7 @@ def create_logger(output_log_path: PathLike) -> logging.Logger:
 
 
 def read_json_from_pydantic(
-    path: PathLike, pydantic_class: pydantic.main.ModelMetaclass
+    path: PathLike, pydantic_class
 ) -> pydantic.BaseModel:
     """
     Reads a json file and parses it to

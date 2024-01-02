@@ -111,9 +111,7 @@ def main() -> None:
     Main function to register a dataset
     """
     data_folder = os.path.abspath("../data/")
-    processing_manifest_path = glob(
-        f"{data_folder}/processing_manifest.json*"
-    )[0]
+    processing_manifest_path = f"{data_folder}/processing_manifest.json"
 
     if not os.path.exists(processing_manifest_path):
         raise ValueError("Processing manifest path does not exist!")
@@ -128,9 +126,15 @@ def main() -> None:
         f"Processing manifest {pipeline_config} provided in path {processing_manifest_path}"
     )
 
-    results_folder = (
-        f"../results/ccf_{pipeline_config['registration']['channel']}"
-    )
+    # Setting parameters based on pipeline
+    sorted_channels = natsorted(pipeline_config["registration"]["channels"])
+
+    # Getting highest wavelenght as default for registration
+    channel_to_register = sorted_channels[-1]
+
+    results_folder = f"../results/ccf_{channel_to_register}"
+
+    metadata_folder = os.path.abspath(f"{results_folder}/metadata")
 
     utils.print_system_information(logger)
 
@@ -155,14 +159,8 @@ def main() -> None:
 
     logger.info(f"{'='*40} SmartSPIM CCF Registration {'='*40}")
 
-    # Setting parameters based on pipeline
-    metadata_folder = os.path.abspath(f"{results_folder}/metadata")
-    sorted_channels = natsorted(pipeline_config["registration"]["channels"])
-
-    # Getting highest wavelenght as default for registration
-    channel_to_register = sorted_channels[-1]
     example_input = {
-        "input_data": "../data/fused",
+        "input_data": "../data/SmartSPIM_695464_2023-10-18_20-30-30_stitched_2023-11-01_00-47-53/image_tile_fusing/OMEZarr",
         "input_channel": channel_to_register,
         "input_scale": pipeline_config["registration"]["input_scale"],
         "bucket_path": "aind-open-data",

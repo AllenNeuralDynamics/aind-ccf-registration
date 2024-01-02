@@ -15,7 +15,6 @@ import dask
 import dask.array as da
 import numpy as np
 import tifffile
-import utils
 import xarray_multiscale
 import zarr
 from aicsimageio.types import PhysicalPixelSizes
@@ -29,6 +28,7 @@ from distributed import wait
 from numcodecs import blosc
 from skimage import io
 
+from . import utils
 from .__init__ import __version__
 from .utils import create_folder, generate_processing
 
