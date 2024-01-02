@@ -12,14 +12,14 @@ RUN conda create -n ccf_reg python=3.8
 SHELL ["conda", "run", "-n", "ccf_reg", "/bin/bash", "-c"]
 
 RUN pip install -U --no-cache-dir \
-    antspyx==0.3.7 \
+    antspyx==0.4.2 \
     argschema==3.0.4 \
     s3fs==2022.11.0 \
     scikit-image==0.19.3 \
     tifffile==2022.10.10 \
     bokeh==2.4.2 \
     zarr==2.13.3 \
-    aind-data-schema==0.12.3 \
+    aind-data-schema==0.15.9 \
     xarray_multiscale==1.1.0 \
     dask[distributed]==2022.11.1 \
     git+https://github.com/AllenNeuralDynamics/ome-zarr-py.git@feature/delayed-dask-poc \
