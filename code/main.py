@@ -10,6 +10,7 @@ import subprocess
 from glob import glob
 
 from aind_ccf_reg import register, utils
+from natsort import natsorted
 
 logging.basicConfig(
     level=logging.DEBUG,
@@ -156,9 +157,13 @@ def main() -> None:
 
     # Setting parameters based on pipeline
     metadata_folder = os.path.abspath(f"{results_folder}/metadata")
+    sorted_channels = natsorted(pipeline_config["registration"]["channels"])
+
+    # Getting highest wavelenght as default for registration
+    channel_to_register = sorted_channels[-1]
     example_input = {
-        "input_data": f"../data/{pipeline_config['registration']['input_data']}",
-        "input_channel": pipeline_config["registration"]["channel"],
+        "input_data": "../data/fused",
+        "input_channel": channel_to_register,
         "input_scale": pipeline_config["registration"]["input_scale"],
         "bucket_path": "aind-open-data",
         "reference": os.path.abspath(
