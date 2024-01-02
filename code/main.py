@@ -7,7 +7,6 @@ import logging
 import multiprocessing
 import os
 import subprocess
-from glob import glob
 
 from aind_ccf_reg import register, utils
 from natsort import natsorted
@@ -112,15 +111,27 @@ def main() -> None:
     """
     data_folder = os.path.abspath("../data/")
     processing_manifest_path = f"{data_folder}/processing_manifest.json"
+    acquisition_path = f"{data_folder}/acquisition.json"
 
     if not os.path.exists(processing_manifest_path):
         raise ValueError("Processing manifest path does not exist!")
+
+    if not os.path.exists(acquisition_path):
+        raise ValueError("Acquisition path does not exist!")
 
     pipeline_config = read_json_as_dict(processing_manifest_path)
     pipeline_config = pipeline_config.get("pipeline_processing")
 
     if pipeline_config is None:
         raise ValueError("Please, provide a valid processing manifest")
+
+    acquisition_json = read_json_as_dict(acquisition_path)
+    acquisition_orientation = acquisition_json.get("axes")
+
+    if acquisition_orientation is None:
+        raise ValueError(
+            f"Please, provide a valid acquisition orientation, acquisition: {acquisition_json}"
+        )
 
     logger.info(
         f"Processing manifest {pipeline_config} provided in path {processing_manifest_path}"
@@ -163,7 +174,7 @@ def main() -> None:
         "input_data": "../data/fused",
         "input_channel": channel_to_register,
         "input_scale": pipeline_config["registration"]["input_scale"],
-        "input_orientation": pipeline_config["axes"],
+        "input_orientation": acquisition_orientation,
         "bucket_path": "aind-open-data",
         "reference": os.path.abspath(
             "../data/ccf_atlas_image/ccf_atlas_reference_25_um.tiff"
@@ -183,13 +194,14 @@ def main() -> None:
             f"{results_folder}/ccf_ls_warp_transforms.nii.gz"
         ),
         "code_url": "https://github.com/AllenNeuralDynamics/aind-ccf-registration",
-        "ants_params": {"spacing": (14.4, 14.4, 16),
-                        "unit": "microns",
-                        "orientations": {
-                            "left_to_right": 0,
-                            "superior_to_inferior": 1,
-                            "anterior_to_posterior": 2,
-                        }
+        "ants_params": {
+            "spacing": (14.4, 14.4, 16),
+            "unit": "microns",
+            "orientations": {
+                "left_to_right": 0,
+                "superior_to_inferior": 1,
+                "anterior_to_posterior": 2,
+            },
         },
         "OMEZarr_params": {
             "clevel": 1,

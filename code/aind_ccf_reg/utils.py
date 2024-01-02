@@ -4,8 +4,6 @@ File for utilities
 import logging
 import multiprocessing
 import os
-import numpy as np
-
 import platform
 import time
 from datetime import datetime
@@ -13,6 +11,7 @@ from pathlib import Path
 from typing import List, Optional, Union
 
 import matplotlib.pyplot as plt
+import numpy as np
 import psutil
 import pydantic
 from aind_data_schema.core.processing import (DataProcess, PipelineProcess,
@@ -152,7 +151,7 @@ def generate_processing(
     processing.write_standard_file(output_directory=dest_processing)
 
 
- def check_orientation(img: np.array, params: dict, orientations: dict):
+def check_orientation(img: np.array, params: dict, orientations: dict):
     """
     Checks aquisition orientation an makes sure it is aligned to the CCF. The
     CCF orientation is:
@@ -174,42 +173,41 @@ def generate_processing(
     img_out : np.array
         The raw image oriented to the CCF
     """
-    
-    orient_mat= np.zeros((3,3))
-    acronym = ['', '', '']
-    
-    
+
+    orient_mat = np.zeros((3, 3))
+    acronym = ["", "", ""]
+
     for k, vals in enumerate(params):
-        direction = vals['direction'].lower()
-        dim = vals['dimension']
+        direction = vals["direction"].lower()
+        dim = vals["dimension"]
         if direction in orientations.keys():
             ref_axis = orientations[direction]
             orient_mat[dim, ref_axis] = 1
             acronym[dim] = direction[0]
-        else: 
-            direction_flip = '_'.join(direction.split('_')[::-1])
+        else:
+            direction_flip = "_".join(direction.split("_")[::-1])
             ref_axis = orientations[direction_flip]
             orient_mat[dim, ref_axis] = -1
             acronym[dim] = direction[0]
-    
-    #check because there was a bug that allowed for invalid spl orientation
-    #all vals should be postitive so just taking absolute value of matrix
-    if "".join(acronym) == 'spl':
+
+    # check because there was a bug that allowed for invalid spl orientation
+    # all vals should be postitive so just taking absolute value of matrix
+    if "".join(acronym) == "spl":
         orient_mat = abs(orient_mat)
-        
-    
+
     original, swapped = np.where(orient_mat)
     img_out = np.moveaxis(img, original, swapped)
-    
+
     out_mat = orient_mat[:, swapped]
     for c, row in enumerate(orient_mat.T):
         val = np.where(row)[0][0]
         if row[val] == -1:
             img_out = np.flip(img_out, c)
             out_mat[val, val] *= -1
-            
+
     return img_out, orient_mat, out_mat
-    
+
+
 def profile_resources(
     time_points: List,
     cpu_percentages: List,
