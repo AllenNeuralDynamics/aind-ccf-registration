@@ -19,7 +19,7 @@ import xarray_multiscale
 import zarr
 from aicsimageio.types import PhysicalPixelSizes
 from aicsimageio.writers import OmeZarrWriter
-from aind_data_schema.processing import DataProcess
+from aind_data_schema.core.processing import DataProcess, ProcessName
 from argschema import ArgSchema, ArgSchemaParser
 from argschema.fields import Dict as sch_dict
 from argschema.fields import List as sch_list
@@ -29,6 +29,7 @@ from distributed import wait
 from numcodecs import blosc
 from skimage import io
 
+from . import utils
 from .__init__ import __version__
 from .utils import create_folder, generate_processing, check_orientation
 
@@ -393,7 +394,7 @@ class Register(ArgSchemaParser):
         )
 
         pyramid_data = [pad_array_n_d(pyramid) for pyramid in pyramid_data]
-        print(f"Pyramid {pyramid_data}")
+        logger.info(f"Pyramid {pyramid_data}")
 
         # Writing OMEZarr image
 
@@ -488,15 +489,17 @@ class Register(ArgSchemaParser):
 
         data_processes.append(
             DataProcess(
-                name="Image importing",
-                version=__version__,
+                name=ProcessName.IMAGE_IMPORTING,
+                software_version=__version__,
                 start_date_time=start_date_time,
                 end_date_time=end_date_time,
                 input_location=str(image_path),
                 output_location=str(image_path),
+                outputs={},
                 code_url=self.args["code_url"],
+                code_version=__version__,
                 parameters={},
-                notes=f"Importing stitched data for alignment",
+                notes="Importing fused data for alignment",
             )
         )
 
@@ -514,15 +517,17 @@ class Register(ArgSchemaParser):
 
         data_processes.append(
             DataProcess(
-                name="Image atlas alignment",
-                version=ants.__version__,
+                name=ProcessName.IMAGE_ATLAS_ALIGNMENT,
+                software_version=__version__,
                 start_date_time=start_date_time,
                 end_date_time=end_date_time,
                 input_location=str(image_path),
                 output_location=str(image_path),
+                outputs={},
                 code_url="https://github.com/ANTsX/ANTs",
+                code_version=ants.__version__,
                 parameters=ants_params,
-                notes=f"Importing stitched data for alignment",
+                notes="Registering image data to Allen CCF Atlas",
             )
         )
 
@@ -549,15 +554,17 @@ class Register(ArgSchemaParser):
 
         data_processes.append(
             DataProcess(
-                name="File format conversion",
-                version="4.8.0",
+                name=ProcessName.FILE_CONVERSION,
+                software_version=__version__,
                 start_date_time=start_date_time,
                 end_date_time=end_date_time,
                 input_location="In memory array",
                 output_location=str(
                     Path(output_data_path).joinpath(image_name)
                 ),
-                code_url="https://github.com/camilolaiton/aicsimageio.git@feature/zarrwriter-multiscales-daskjobs",
+                outputs={},
+                code_url=self.args["code_url"],
+                code_version=__version__,
                 parameters={
                     "pixel_sizes": ants_params["new_spacing"],
                     "OMEZarr_params": self.args["OMEZarr_params"],
@@ -572,8 +579,9 @@ class Register(ArgSchemaParser):
 
         generate_processing(
             data_processes=data_processes,
-            dest_processing=processing_path,
-            pipeline_version=__version__,
+            dest_processing=metadata_path,
+            processor_full_name="Camilo Laiton",
+            pipeline_version="1.5.0",
         )
 
         return str(image_path)

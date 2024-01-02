@@ -4,11 +4,13 @@ Main used in code ocean to execute capsule
 
 import json
 import logging
+import multiprocessing
 import os
 import subprocess
 from glob import glob
 
-from aind_ccf_reg import register
+from aind_ccf_reg import register, utils
+from natsort import natsorted
 
 logging.basicConfig(
     level=logging.DEBUG,
@@ -109,25 +111,57 @@ def main() -> None:
     Main function to register a dataset
     """
     data_folder = os.path.abspath("../data/")
-    processing_manifest_path = glob(f"{data_folder}/registration_processing_manifest*.json*")[0]
+    processing_manifest_path = f"{data_folder}/processing_manifest.json"
 
     if not os.path.exists(processing_manifest_path):
         raise ValueError("Processing manifest path does not exist!")
 
     pipeline_config = read_json_as_dict(processing_manifest_path)
+    pipeline_config = pipeline_config.get("pipeline_processing")
+
+    if pipeline_config is None:
+        raise ValueError("Please, provide a valid processing manifest")
 
     logger.info(
         f"Processing manifest {pipeline_config} provided in path {processing_manifest_path}"
     )
 
-    results_folder = (
-        f"../results/ccf_{pipeline_config['registration']['channel']}"
-    )
-
     # Setting parameters based on pipeline
+    sorted_channels = natsorted(pipeline_config["registration"]["channels"])
+
+    # Getting highest wavelenght as default for registration
+    channel_to_register = sorted_channels[-1]
+
+    results_folder = f"../results/ccf_{channel_to_register}"
+
+    metadata_folder = os.path.abspath(f"{results_folder}/metadata")
+
+    utils.print_system_information(logger)
+
+    # Tracking compute resources
+    # Subprocess to track used resources
+    manager = multiprocessing.Manager()
+    time_points = manager.list()
+    cpu_percentages = manager.list()
+    memory_usages = manager.list()
+
+    profile_process = multiprocessing.Process(
+        target=utils.profile_resources,
+        args=(
+            time_points,
+            cpu_percentages,
+            memory_usages,
+            20,
+        ),
+    )
+    profile_process.daemon = True
+    profile_process.start()
+
+    logger.info(f"{'='*40} SmartSPIM CCF Registration {'='*40}")
+
     example_input = {
-        "input_data": f"../data/{pipeline_config['registration']['input_data']}",
-        "input_channel": pipeline_config["registration"]["channel"],
+        "input_data": "../data/fused",
+        "input_channel": channel_to_register,
         "input_scale": pipeline_config["registration"]["input_scale"],
         "input_orientation": pipeline_config["axes"],
         "bucket_path": "aind-open-data",
@@ -136,7 +170,7 @@ def main() -> None:
         ),
         "reference_res": 25,
         "output_data": os.path.abspath(f"{results_folder}/OMEZarr"),
-        "metadata_folder": os.path.abspath(f"{results_folder}/metadata"),
+        "metadata_folder": metadata_folder,
         "downsampled_file": "downsampled.tiff",
         "downsampled16bit_file": "downsampled_16.tiff",
         "affine_transforms_file": os.path.abspath(
@@ -167,6 +201,18 @@ def main() -> None:
     logger.info(f"Input parameters in CCF run: {example_input}")
     # flake8: noqa: F841
     image_path = register.main(example_input)
+
+    # Getting tracked resources and plotting image
+    utils.stop_child_process(profile_process)
+
+    if len(time_points):
+        utils.generate_resources_graphs(
+            time_points,
+            cpu_percentages,
+            memory_usages,
+            metadata_folder,
+            "smartspim_ccf_registration",
+        )
 
 
 if __name__ == "__main__":
