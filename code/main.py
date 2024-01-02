@@ -109,7 +109,9 @@ def main() -> None:
     Main function to register a dataset
     """
     data_folder = os.path.abspath("../data/")
-    processing_manifest_path = glob(f"{data_folder}/registration_processing_manifest*.json*")[0]
+    processing_manifest_path = glob(
+        f"{data_folder}/processing_manifest.json*"
+    )[0]
 
     if not os.path.exists(processing_manifest_path):
         raise ValueError("Processing manifest path does not exist!")
