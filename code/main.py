@@ -4,11 +4,12 @@ Main used in code ocean to execute capsule
 
 import json
 import logging
+import multiprocessing
 import os
 import subprocess
 from glob import glob
 
-from aind_ccf_reg import register
+from aind_ccf_reg import register, utils
 
 logging.basicConfig(
     level=logging.DEBUG,
@@ -126,7 +127,31 @@ def main() -> None:
         f"../results/ccf_{pipeline_config['registration']['channel']}"
     )
 
+    utils.print_system_information(logger)
+
+    # Tracking compute resources
+    # Subprocess to track used resources
+    manager = multiprocessing.Manager()
+    time_points = manager.list()
+    cpu_percentages = manager.list()
+    memory_usages = manager.list()
+
+    profile_process = multiprocessing.Process(
+        target=utils.profile_resources,
+        args=(
+            time_points,
+            cpu_percentages,
+            memory_usages,
+            20,
+        ),
+    )
+    profile_process.daemon = True
+    profile_process.start()
+
+    logger.info(f"{'='*40} SmartSPIM CCF Registration {'='*40}")
+
     # Setting parameters based on pipeline
+    metadata_folder = os.path.abspath(f"{results_folder}/metadata")
     example_input = {
         "input_data": f"../data/{pipeline_config['registration']['input_data']}",
         "input_channel": pipeline_config["registration"]["channel"],
@@ -137,7 +162,7 @@ def main() -> None:
         ),
         "reference_res": 25,
         "output_data": os.path.abspath(f"{results_folder}/OMEZarr"),
-        "metadata_folder": os.path.abspath(f"{results_folder}/metadata"),
+        "metadata_folder": metadata_folder,
         "downsampled_file": "downsampled.tiff",
         "downsampled16bit_file": "downsampled_16.tiff",
         "affine_transforms_file": os.path.abspath(
@@ -161,6 +186,18 @@ def main() -> None:
     logger.info(f"Input parameters in CCF run: {example_input}")
     # flake8: noqa: F841
     image_path = register.main(example_input)
+
+    # Getting tracked resources and plotting image
+    utils.stop_child_process(profile_process)
+
+    if len(time_points):
+        utils.generate_resources_graphs(
+            time_points,
+            cpu_percentages,
+            memory_usages,
+            metadata_folder,
+            "smartspim_ccf_registration",
+        )
 
 
 if __name__ == "__main__":
