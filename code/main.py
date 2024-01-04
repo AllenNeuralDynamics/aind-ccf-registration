@@ -2,10 +2,27 @@
 Main used in code ocean to execute capsule
 """
 
+import json
+import logging
+import multiprocessing
+import os
 import subprocess
-import sys
 
-from aind_ccf_reg import register
+from aind_ccf_reg import register, utils
+from natsort import natsorted
+
+logging.basicConfig(
+    level=logging.DEBUG,
+    format="%(asctime)s - %(levelname)s : %(message)s",
+    datefmt="%Y-%m-%d %H:%M",
+    handlers=[
+        logging.StreamHandler(),
+        # logging.FileHandler("test.log", "a"),
+    ],
+)
+logging.disable("DEBUG")
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 
 def save_string_to_txt(txt: str, filepath: str, mode="w") -> None:
@@ -27,6 +44,33 @@ def save_string_to_txt(txt: str, filepath: str, mode="w") -> None:
 
     with open(filepath, mode) as file:
         file.write(txt + "\n")
+
+
+def read_json_as_dict(filepath: str) -> dict:
+    """
+    Reads a json as dictionary.
+
+    Parameters
+    ------------------------
+
+    filepath: PathLike
+        Path where the json is located.
+
+    Returns
+    ------------------------
+
+    dict:
+        Dictionary with the data the json has.
+
+    """
+
+    dictionary = {}
+
+    if os.path.exists(filepath):
+        with open(filepath) as json_file:
+            dictionary = json.load(json_file)
+
+    return dictionary
 
 
 def execute_command_helper(command: str, print_command: bool = False) -> None:
@@ -65,32 +109,122 @@ def main() -> None:
     """
     Main function to register a dataset
     """
-    image_path = register.main()
-    bucket_path = sys.argv[-1]
+    data_folder = os.path.abspath("../data/")
+    processing_manifest_path = f"{data_folder}/processing_manifest.json"
+    acquisition_path = f"{data_folder}/acquisition.json"
 
-    output_folder = "/results"
-    print(f"Bucket path: {bucket_path} - Output path: {output_folder}")
-    # Copying output to bucket
+    if not os.path.exists(processing_manifest_path):
+        raise ValueError("Processing manifest path does not exist!")
 
-    if len(bucket_path):
-        dataset_folder = str(sys.argv[2]).replace("/data/", "")
-        channel_name = image_path.split("/")[-2].replace(".zarr", "")
-        dataset_name = (
-            dataset_folder + f"/image_atlas_alignment/{channel_name}"
+    if not os.path.exists(acquisition_path):
+        raise ValueError("Acquisition path does not exist!")
+
+    pipeline_config = read_json_as_dict(processing_manifest_path)
+    pipeline_config = pipeline_config.get("pipeline_processing")
+
+    if pipeline_config is None:
+        raise ValueError("Please, provide a valid processing manifest")
+
+    acquisition_json = read_json_as_dict(acquisition_path)
+    acquisition_orientation = acquisition_json.get("axes")
+
+    if acquisition_orientation is None:
+        raise ValueError(
+            f"Please, provide a valid acquisition orientation, acquisition: {acquisition_json}"
         )
-        s3_path = f"s3://{bucket_path}/{dataset_name}"
 
-        for out in execute_command_helper(
-            f"aws s3 mv --recursive {output_folder} {s3_path}"
-        ):
-            print(out)
+    logger.info(
+        f"Processing manifest {pipeline_config} provided in path {processing_manifest_path}"
+    )
 
-        save_string_to_txt(
-            f"Results of CCF registration saved in: {s3_path}",
-            "/root/capsule/results/output_ccf.txt",
+    # Setting parameters based on pipeline
+    sorted_channels = natsorted(pipeline_config["registration"]["channels"])
+
+    # Getting highest wavelenght as default for registration
+    channel_to_register = sorted_channels[-1]
+
+    results_folder = f"../results/ccf_{channel_to_register}"
+
+    metadata_folder = os.path.abspath(f"{results_folder}/metadata")
+
+    utils.print_system_information(logger)
+
+    # Tracking compute resources
+    # Subprocess to track used resources
+    manager = multiprocessing.Manager()
+    time_points = manager.list()
+    cpu_percentages = manager.list()
+    memory_usages = manager.list()
+
+    profile_process = multiprocessing.Process(
+        target=utils.profile_resources,
+        args=(
+            time_points,
+            cpu_percentages,
+            memory_usages,
+            20,
+        ),
+    )
+    profile_process.daemon = True
+    profile_process.start()
+
+    logger.info(f"{'='*40} SmartSPIM CCF Registration {'='*40}")
+
+    example_input = {
+        "input_data": "../data/fused",
+        "input_channel": channel_to_register,
+        "input_scale": pipeline_config["registration"]["input_scale"],
+        "input_orientation": acquisition_orientation,
+        "bucket_path": "aind-open-data",
+        "reference": os.path.abspath(
+            "../data/ccf_atlas_image/ccf_atlas_reference_25_um.tiff"
+        ),
+        "reference_res": 25,
+        "output_data": os.path.abspath(f"{results_folder}/OMEZarr"),
+        "metadata_folder": metadata_folder,
+        "downsampled_file": "downsampled.tiff",
+        "downsampled16bit_file": "downsampled_16.tiff",
+        "affine_transforms_file": os.path.abspath(
+            f"{results_folder}/affine_transforms.mat"
+        ),
+        "ls_ccf_warp_transforms_file": os.path.abspath(
+            f"{results_folder}/ls_ccf_warp_transforms.nii.gz"
+        ),
+        "ccf_ls_warp_transforms_file": os.path.abspath(
+            f"{results_folder}/ccf_ls_warp_transforms.nii.gz"
+        ),
+        "code_url": "https://github.com/AllenNeuralDynamics/aind-ccf-registration",
+        "ants_params": {
+            "spacing": (14.4, 14.4, 16),
+            "unit": "microns",
+            "orientations": {
+                "left_to_right": 0,
+                "superior_to_inferior": 1,
+                "anterior_to_posterior": 2,
+            },
+        },
+        "OMEZarr_params": {
+            "clevel": 1,
+            "compressor": "zstd",
+            "chunks": (64, 64, 64),
+        },
+    }
+
+    logger.info(f"Input parameters in CCF run: {example_input}")
+    # flake8: noqa: F841
+    image_path = register.main(example_input)
+
+    # Getting tracked resources and plotting image
+    utils.stop_child_process(profile_process)
+
+    if len(time_points):
+        utils.generate_resources_graphs(
+            time_points,
+            cpu_percentages,
+            memory_usages,
+            metadata_folder,
+            "smartspim_ccf_registration",
         )
-    else:
-        print("No bucket provided, avoiding manual copy")
 
 
 if __name__ == "__main__":

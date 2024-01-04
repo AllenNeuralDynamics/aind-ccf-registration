@@ -12,17 +12,19 @@ RUN conda create -n ccf_reg python=3.8
 SHELL ["conda", "run", "-n", "ccf_reg", "/bin/bash", "-c"]
 
 RUN pip install -U --no-cache-dir \
-    antspyx==0.3.8 \
+    antspyx \
     argschema==3.0.4 \
     s3fs==2022.11.0 \
     scikit-image==0.19.3 \
     tifffile==2022.10.10 \
     bokeh==2.4.2 \
     zarr==2.13.3 \
-    aind-data-schema==0.12.3 \
+    aind-data-schema==0.22.1 \
     xarray_multiscale==1.1.0 \
     dask[distributed]==2022.11.1 \
-    git+https://github.com/AllenNeuralDynamics/ome-zarr-py.git@feature/delayed-dask-poc \
+    matplotlib==3.7.3 \
+    ome-zarr==0.8.2 \
+    natsort==8.4.0 \
     aicsimageio@git+https://github.com/camilolaiton/aicsimageio.git@feature/zarrwriter-multiscales-daskjobs
 
 RUN conda install -c conda-forge awscli

@@ -3,8 +3,7 @@ set -ex
 source /opt/conda/etc/profile.d/conda.sh
 conda activate ccf_reg
 # The previous version of this file was commented-out and follows below:
+source /opt/conda/etc/profile.d/conda.sh
+conda activate ccf_reg
 
-# python -u aind-ccf-registration/src/ccf_reg/register.py
-
-python -u main.py --input_data /data/"$1" --input_channel "$2".zarr --input_scale "$3" --input_zarr_directory "$4" --bucket_path "$5"
-# python -u register_datasets.py
+python -u main.py "$@"
