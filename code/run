@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -ex
-
+source /opt/conda/etc/profile.d/conda.sh
+conda activate ccf_reg
 # The previous version of this file was commented-out and follows below:
 source /opt/conda/etc/profile.d/conda.sh
 conda activate ccf_reg
