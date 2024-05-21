@@ -7,43 +7,51 @@ import logging
 import multiprocessing
 import os
 import subprocess
+from datetime import datetime
 
 from aind_ccf_reg import register, utils
 from natsort import natsorted
-
-logging.basicConfig(
-    level=logging.DEBUG,
-    format="%(asctime)s - %(levelname)s : %(message)s",
-    datefmt="%Y-%m-%d %H:%M",
-    handlers=[
-        logging.StreamHandler(),
-        # logging.FileHandler("test.log", "a"),
-    ],
-)
-logging.disable("DEBUG")
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+from aind_ccf_reg.configs import PathLike
+from aind_ccf_reg.utils import create_folder
 
 
-def save_string_to_txt(txt: str, filepath: str, mode="w") -> None:
+def create_logger(output_log_path: PathLike) -> logging.Logger:
     """
-    Saves a text in a file in the given mode.
+    Creates a logger that generates output logs to a specific path.
 
     Parameters
-    ------------------------
-    txt: str
-        String to be saved.
+    ------------
+    output_log_path: PathLike
+        Path where the log is going to be stored
 
-    filepath: PathLike
-        Path where the file is located or will be saved.
-
-    mode: str
-        File open mode.
-
+    Returns
+    -----------
+    logging.Logger
+        Created logger 
+        pointing to the file path.
     """
+    CURR_DATE_TIME = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
 
-    with open(filepath, mode) as file:
-        file.write(txt + "\n")
+    LOGS_FILE = f"{output_log_path}/register_process.log"
+
+    logging.basicConfig(
+        level=logging.DEBUG,
+        format="%(asctime)s - %(levelname)s : %(message)s",
+        datefmt="%Y-%m-%d %H:%M",
+        handlers=[
+            logging.StreamHandler(),
+            logging.FileHandler(LOGS_FILE, "a"),
+        ],
+        force=True,
+    )
+
+#     logging.disable("DEBUG")
+    logging.disable(logging.DEBUG)
+    logger = logging.getLogger(__name__)
+    logger.setLevel(logging.DEBUG)
+    logger.info(f"Execution datetime: {CURR_DATE_TIME}")
+
+    return logger
 
 
 def read_json_as_dict(filepath: str) -> dict:
@@ -71,7 +79,6 @@ def read_json_as_dict(filepath: str) -> dict:
             dictionary = json.load(json_file)
 
     return dictionary
-
 
 def execute_command_helper(command: str, print_command: bool = False) -> None:
     """
@@ -109,10 +116,31 @@ def main() -> None:
     """
     Main function to register a dataset
     """
-    data_folder = os.path.abspath("../data/")
-    processing_manifest_path = f"{data_folder}/processing_manifest.json"
-    acquisition_path = f"{data_folder}/acquisition.json"
+#     data_folder = os.path.abspath("../data/")
+#     processing_manifest_path = f"{data_folder}/processing_manifest.json"
+#     acquisition_path = f"{data_folder}/acquisition.json"
+#     processing_manifest_path = f"{data_folder}/smartspim_test_dataset/derivatives/processing_manifest.json"
 
+    #--------------------------- TODO ----------------------------#    
+    
+    subject_dir = "SmartSPIM_685111_2023-09-28_18-19-10_stitched_2024-01-11_10-16-44"
+    
+    data_folder = os.path.abspath("../data/")
+    processing_manifest_path = f"{data_folder}/processing_manifest_639.json" 
+    acquisition_path = f"{data_folder}/{subject_dir}/acquisition.json"
+    
+    #-------------------------------------------------------------#    
+
+    template_path = os.path.abspath("../data/smartspim_lca_template/smartspim_lca_template_25.nii.gz")
+    ccf_reference_path = os.path.abspath("../data/allen_mouse_ccf/average_template/average_template_25.nii.gz") 
+    template_to_ccf_transform_path = [
+        os.path.abspath("../data/spim_template_to_ccf/syn_1Warp.nii.gz"),
+        os.path.abspath("../data/spim_template_to_ccf/syn_0GenericAffine.mat")]
+    
+    print(f"template_to_ccf_transform_path: {template_to_ccf_transform_path}")
+    
+    #-------------------------------------------------------------#    
+    
     if not os.path.exists(processing_manifest_path):
         raise ValueError("Processing manifest path does not exist!")
 
@@ -127,15 +155,12 @@ def main() -> None:
 
     acquisition_json = read_json_as_dict(acquisition_path)
     acquisition_orientation = acquisition_json.get("axes")
+    print(f"acquisition_orientation: {acquisition_orientation}")
 
     if acquisition_orientation is None:
         raise ValueError(
             f"Please, provide a valid acquisition orientation, acquisition: {acquisition_json}"
         )
-
-    logger.info(
-        f"Processing manifest {pipeline_config} provided in path {processing_manifest_path}"
-    )
 
     # Setting parameters based on pipeline
     sorted_channels = natsorted(pipeline_config["registration"]["channels"])
@@ -143,8 +168,19 @@ def main() -> None:
     # Getting highest wavelenght as default for registration
     channel_to_register = sorted_channels[-1]
 
-    results_folder = f"../results/ccf_{channel_to_register}"
-
+    #-------------------------------------------------------------#    
+    
+#     results_folder = f"../results/ccf_{channel_to_register}"  # TODO
+    dataset_id = subject_dir.split("_")[1]
+    results_folder = f"../results/{dataset_id}2ccf_{channel_to_register}"
+    create_folder(results_folder)
+    
+    logger = create_logger(output_log_path=results_folder)
+    logger.info(
+        f"Processing manifest {pipeline_config} provided in path {processing_manifest_path}"
+    )
+    
+    reg_folder = os.path.abspath(f"{results_folder}/registration")
     metadata_folder = os.path.abspath(f"{results_folder}/metadata")
 
     utils.print_system_information(logger)
@@ -171,37 +207,50 @@ def main() -> None:
     logger.info(f"{'='*40} SmartSPIM CCF Registration {'='*40}")
 
     example_input = {
-        "input_data": "../data/fused",
+#         "input_data": "../data/fused", # TODO
+        "input_data": f"../data/{subject_dir}/image_tile_fusing/OMEZarr/",
         "input_channel": channel_to_register,
         "input_scale": pipeline_config["registration"]["input_scale"],
         "input_orientation": acquisition_orientation,
         "bucket_path": "aind-open-data",
-        "reference": os.path.abspath(
-            "../data/ccf_atlas_image/ccf_atlas_reference_25_um.tiff"
-        ),
+        "template_path": template_path, # SPIM template
+        "ccf_reference_path": ccf_reference_path,
+        "template_to_ccf_transform_path": template_to_ccf_transform_path,
         "reference_res": 25,
         "output_data": os.path.abspath(f"{results_folder}/OMEZarr"),
         "metadata_folder": metadata_folder,
-        "downsampled_file": "downsampled.tiff",
-        "downsampled16bit_file": "downsampled_16.tiff",
-        "affine_transforms_file": os.path.abspath(
-            f"{results_folder}/affine_transforms.mat"
-        ),
-        "ls_ccf_warp_transforms_file": os.path.abspath(
-            f"{results_folder}/ls_ccf_warp_transforms.nii.gz"
-        ),
-        "ccf_ls_warp_transforms_file": os.path.abspath(
-            f"{results_folder}/ccf_ls_warp_transforms.nii.gz"
-        ),
         "code_url": "https://github.com/AllenNeuralDynamics/aind-ccf-registration",
-        "ants_params": {
-            "spacing": (14.4, 14.4, 16),
-            "unit": "microns",
-            "orientations": {
-                "left_to_right": 0,
-                "superior_to_inferior": 1,
-                "anterior_to_posterior": 2,
+        "reg_folder": reg_folder,
+        "prep_params": {
+            "rawdata_figpath": f"{reg_folder}/prep_zarr_img.jpg",
+            #"rawdata_path": f"{reg_folder}/prep_zarr_img.nii.gz",
+            "resample_figpath": f"{reg_folder}/prep_resampled_zarr_img.jpg",
+            #"resample_path": f"{reg_folder}/prep_resampled_zarr_img.nii.gz",
+            "mask_figpath": f"{reg_folder}/prep_mask.jpg",
+            #"mask_path": f"{reg_folder}/prep_mask.nii.gz",
+            "n4bias_figpath": f"{reg_folder}/prep_n4bias.jpg",
+            #"n4bias_path": f"{reg_folder}/prep_n4bias.nii.gz",
+            "img_diff_n4bias_figpath": f"{reg_folder}/prep_img_diff_n4bias.jpg",
+            #"img_diff_n4bias_path": f"{reg_folder}/prep_img_diff_n4bias.nii.gz",
+            "percNorm_figpath": f"{reg_folder}/prep_percNorm.jpg",
+            "percNorm_path": f"{reg_folder}/prep_percNorm.nii.gz",
             },
+        "ants_params": {
+            "spacing": (0.0144, 0.0144, 0.016),
+            "unit": "millimetre",
+            # "ccf_orientations": {
+            #     "anterior_to_posterior": 0,
+            #     "superior_to_inferior": 1,
+            #     "left_to_right": 2,
+            # }, 
+            "template_orientations": {
+                "anterior_to_posterior": 1,
+                "superior_to_inferior": 2,
+                "right_to_left": 0,
+            }, 
+            "rigid_path": f"{reg_folder}/moved_rigid.nii.gz",
+            "moved_to_template_path": f"{reg_folder}/moved_to_template.nii.gz",
+            "moved_to_ccf_path": f"{reg_folder}/moved_to_ccf.nii.gz",
         },
         "OMEZarr_params": {
             "clevel": 1,

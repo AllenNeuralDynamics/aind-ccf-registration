@@ -1,5 +1,16 @@
 """
-CCF registration of an image to the Allen Institute's atlas
+Register an lightsheet data to the Allen Institute's CCF atlas via the SPIM template
+
+Pipeline:
+(1) preprocessing an brain image
+(2) rigid + SyN registration: register the preprocessed brain image to the SPIM template 
+(3) apply transform to align deformed image from (2) to the CCF template
+
+Quality control on registration:
+(1) visualization: plot the overlay/difference image between deformed and fixed images
+(2) TODO: compute the similarity metics to automatically detect registration failure
+
+# TODO: need to pass transforms that aligns brain image to CCF to aind-smartspim-cell-quantification capsule
 """
 import logging
 import multiprocessing
@@ -20,22 +31,24 @@ import zarr
 from aicsimageio.types import PhysicalPixelSizes
 from aicsimageio.writers import OmeZarrWriter
 from aind_data_schema.core.processing import DataProcess, ProcessName
-from argschema import ArgSchema, ArgSchemaParser
-from argschema.fields import Dict as sch_dict
-from argschema.fields import Int
-from argschema.fields import List as sch_list
-from argschema.fields import Str
+from argschema import ArgSchemaParser
 from dask.distributed import Client, LocalCluster, performance_report
 from distributed import wait
 from numcodecs import blosc
 from skimage import io
 
-from .__init__ import __version__
-from .utils import check_orientation, create_folder, generate_processing
 
+from .__init__ import __version__
 blosc.use_threads = False
-PathLike = Union[str, Path]
-ArrayLike = Union[dask.array.core.Array, np.ndarray]
+
+from aind_ccf_reg.utils import check_orientation, create_folder, generate_processing
+from aind_ccf_reg.configs import PathLike, ArrayLike
+from aind_ccf_reg.configs import VMIN, VMAX
+from aind_ccf_reg.configs import RegSchema
+from aind_ccf_reg.plots import plot_antsimgs, plot_reg, plot_reg_before_after
+from aind_ccf_reg.preprocess import perc_normalization
+from aind_ccf_reg.preprocess import write_and_plot_image
+from aind_ccf_reg.preprocess import Preprocess
 
 LOG_FMT = "%(asctime)s %(message)s"
 LOG_DATE_FMT = "%Y-%m-%d %H:%M"
@@ -127,111 +140,10 @@ def get_pyramid_metadata() -> dict:
     }
 
 
-class RegSchema(ArgSchema):
-    """
-    Schema format for Registration.
-    """
-
-    input_data = Str(
-        metadata={
-            "required": True,
-            "description": "Input data without timestamp",
-        }
-    )
-
-    input_channel = Str(
-        metadata={"required": True, "description": "Channel to register"}
-    )
-
-    input_scale = Int(
-        metadata={"required": True, "description": "Zarr scale to start with"}
-    )
-
-    input_orientation = sch_list(
-        cls_or_instance=sch_dict,
-        metadata={
-            "required": True,
-            "description": "Brain orientation during aquisition",
-        },
-    )
-
-    reference = Str(
-        metadata={"required": True, "description": "Reference image"}
-    )
-
-    output_data = Str(
-        metadata={"required": True, "description": "Output file"}
-    )
-
-    bucket_path = Str(
-        required=True,
-        metadata={"description": "Amazon Bucket or Google Bucket name"},
-    )
-
-    code_url = Str(
-        metadata={"required": True, "description": "CCF registration URL"}
-    )
-
-    metadata_folder = Str(
-        metadata={"required": True, "description": "Metadata folder"}
-    )
-
-    OMEZarr_params = sch_dict(
-        metadata={
-            "required": True,
-            "description": "OMEZarr writing parameters",
-        }
-    )
-
-    ants_params = sch_dict(
-        metadata={
-            "required": True,
-            "description": "ants registering parameters",
-        }
-    )
-
-    downsampled_file = Str(
-        metadata={"required": True, "description": "Downsampled file"}
-    )
-
-    downsampled16bit_file = Str(
-        metadata={"required": True, "description": "Downsampled 16bit file"}
-    )
-
-    reference_res = Int(
-        metadata={
-            "required": True,
-            "description": "Voxel Resolution of reference in microns",
-        }
-    )
-
-    affine_transforms_file = Str(
-        metadata={
-            "required": True,
-            "description": "Output forward affine Transforms file",
-        }
-    )
-
-    ls_ccf_warp_transforms_file = Str(
-        metadata={
-            "required": True,
-            "description": "Output inverse warp Transforms file",
-        }
-    )
-
-    ccf_ls_warp_transforms_file = Str(
-        metadata={
-            "required": True,
-            "description": "Output forward warp Transforms file",
-        }
-    )
-
-
 class Register(ArgSchemaParser):
     """
     Class to Register lightsheet data to CCF atlas
     """
-
     default_schema = RegSchema
 
     def __read_zarr_image(self, image_path: PathLike) -> np.array:
@@ -254,6 +166,197 @@ class Register(ArgSchemaParser):
         img_array = np.squeeze(img_array)
         return img_array
 
+    def _qc_reg(self, ants_moving, ants_fixed, ants_moved, moved_path: PathLike=None, figpath_name: str="reg") -> None:
+        """ 
+        Quality control on registration results and write deformed image. 
+        The plots will be saved to the same folder as the deformed image.
+        
+        Parameters
+        -------------
+        ants_fixed: ANTsImage
+            fixed image
+        ants_moving: ANTsImage
+            moving image
+        ants_moved: ANTsImage
+            deformed image
+        moved_path: PathLike
+            Path to save deformed image
+        figpath_name: str
+            figpath name
+        """
+        # plot moving, fixed, moved, overlaid, difference images in three directions
+        figpath = f"{self.args['reg_folder']}/{figpath_name}" 
+        logger.info(f"Plot registration results: {figpath}")   
+        
+        if np.any(ants_moving.direction != ants_fixed.direction):
+            logger.info(f"Reorient moving image direction to fixed image direction ...")    
+            ants_moving = ants.reorient_image2(ants_moving, orientation=ants.get_orientation(ants_fixed))   
+            logger.info(f"Reoriented moving image -- {ants_moving}")    
+
+        for loc in [0, 1, 2]:        
+            plot_args = (ants_moving, ants_fixed, ants_moved, f"{figpath}_{loc}")
+            plot_kwargs = {"title": figpath_name, "loc": loc, "vmin": VMIN, "vmax": VMAX} 
+
+            if np.all(ants_moving.shape == ants_fixed.shape):
+                # moving and fixed images have same dimension
+                plot_reg_before_after(*plot_args, **plot_kwargs)
+            else:
+                # moving and fixed images do not have same dimension
+                plot_reg(*plot_args, **plot_kwargs)
+            
+        # plot moved image
+        if moved_path:
+            figpath = moved_path.replace(".nii.gz", "")
+            title = moved_path.replace(".nii.gz", "").split("/")[-1]
+            logger.info(f"Plot aligned image: {figpath}, title: {title}")    
+            plot_antsimgs(ants_moved, figpath, title, vmin=VMIN, vmax=VMAX)
+        
+            logger.info(f"Saving aligned image: {moved_path}")    
+            ants.image_write(ants_moved, moved_path) 
+            logger.info("Done saving")
+
+    def rigid_register(self, ants_fixed, ants_moving):
+        """ Run rigid regsitration to align brain image to SPIM template
+        
+        Parameters
+        -------------
+        ants_fixed: ANTsImage
+            fixed image
+        ants_moving: ANTsImage
+            moving image
+        
+        Returns
+        -----------
+        ANTsImage
+            deformed image
+        """
+        logger.info(f"\nStart computing rigid registration ....")
+
+        # run registration
+        start_time = datetime.now()
+        registration_params = {
+            "fixed": ants_fixed,
+            "moving": ants_moving, 
+            "type_of_transform": "Rigid",
+            "outprefix": f"{self.args['reg_folder']}/rigid_", 
+            "mask_all_stages": True,
+            "grad_step": 0.25,
+            "reg_iterations": (60, 40, 20, 0),
+            "aff_metric": "mattes"            
+        }
+
+        logger.info(f"Computing rigid registration with parameters: {registration_params}")
+        reg = ants.registration(**registration_params)
+        end_time = datetime.now()
+        logger.info(f"Rigid registration Complete, execution time: {end_time - start_time} s -- image {reg}")
+
+        ants_moved = reg["warpedmovout"]
+        
+        reg_task = "reg_rigid"
+        self._qc_reg(ants_moving, 
+                     ants_fixed, 
+                     ants_moved, 
+                     moved_path=self.args["ants_params"]["rigid_path"], 
+                     figpath_name=reg_task)
+
+        return ants_moved
+
+    
+    def register_to_template(self, ants_fixed, ants_moving):  
+        """ 
+        Run SyN regsitration to align brain image to SPIM template
+        
+        Parameters
+        -------------
+        ants_fixed: ANTsImage
+            fixed image
+        ants_moving: ANTsImage
+            moving image
+        
+        Returns
+        -----------
+        ANTsImage
+            deformed image
+        """
+        logger.info(f"\nStart registering to template ....")
+
+        if self.args['reference_res'] == 25:
+            reg_iterations = [100, 10, 0] # TODO
+            # reg_iterations = [1, 0, 0, 0]
+        elif self.args['reference_res'] == 10:
+            reg_iterations = [400, 200, 40, 0]
+        else:
+            raise ValueError(
+                f"Resolution {self.args['reference_res']} is not allowed. Allowed values are: 10, 25"
+            )
+            
+        start_time = datetime.now()
+        registration_params = {
+            "fixed": ants_fixed,
+            "moving": ants_moving,
+            "syn_metric": "CC",                     
+            "syn_sampling": 2,
+            "reg_iterations": reg_iterations, 
+            "outprefix": f"{self.args['reg_folder']}/"}
+        
+        logger.info(f"Computing SyN registration with parameters: {registration_params}")
+        reg = ants.registration(**registration_params)
+        end_time = datetime.now()
+        logger.info(f"SyN registration complete, execution time: {end_time - start_time} s -- image {reg}")
+        
+        ants_moved = reg["warpedmovout"]
+        
+        reg_task = "reg_to_template"
+        self._qc_reg(ants_moving, 
+                     ants_fixed, 
+                     ants_moved, 
+                     moved_path=self.args["ants_params"]["moved_to_template_path"], 
+                     figpath_name=reg_task)
+        
+        return ants_moved
+    
+    def register_to_ccf(self, ants_fixed, ants_moving):  
+        """ 
+        Run manual regsitration to align brain image to CCF template
+        
+        Parameters
+        -------------
+        ants_fixed: ANTsImage
+            fixed image
+        ants_moving: ANTsImage
+            moving image
+        
+        Returns
+        -----------
+        ANTsImage
+            deformed image
+        """
+        logger.info("\nStart registering to CCF ....")
+        logger.info(f"Register to CCF with: {self.args['template_to_ccf_transform_path']}")
+
+        # for visualizing registration results
+        ants_fixed = perc_normalization(ants_fixed)
+        
+        start_time = datetime.now()
+        ants_moved = ants.apply_transforms(
+                fixed  = ants_fixed,
+                moving = ants_moving ,
+                transformlist=self.args["template_to_ccf_transform_path"] 
+            )
+        end_time = datetime.now()
+
+        logger.info(f"Register to CCF, execution time: {end_time - start_time} s -- image {ants_moved}")
+
+        reg_task = "reg_to_ccf"
+        self._qc_reg(ants_moving, 
+                     ants_fixed, 
+                     ants_moved, 
+                     moved_path=self.args["ants_params"]["moved_to_ccf_path"], 
+                     figpath_name=reg_task)
+        
+        return ants_moved
+    
+    
     def atlas_alignment(
         self, img_array: np.array, ants_params: dict
     ) -> np.array:
@@ -262,19 +365,32 @@ class Register(ArgSchemaParser):
 
         Parameters
         ------------
-
         img_array: np.array
             Array with the image
 
         ants_params: dict
             Dictionary with ants parameters
         """
-        # get data orientation
+        #----------------------------------#
+        # load SPIM template + CCF
+        #----------------------------------#
+    
+        logger.info("Reading reference images")
+        ants_template = ants.image_read(os.path.abspath(self.args["template_path"])) # SPIM template
+        ants_ccf      = ants.image_read(os.path.abspath(self.args["ccf_reference_path"])) # CCF template 
+        logger.info(f"Loaded SPIM template {ants_template}")
+        logger.info(f"Loaded CCF template {ants_ccf}")
+        
+        
+        #----------------------------------#
+        # orient data to SPIM template's direction
+        #----------------------------------#
+
         img_array = img_array.astype(np.double)
         img_out, in_mat, out_mat = check_orientation(
             img_array,
             self.args["input_orientation"],
-            self.args["ants_params"]["orientations"],
+            self.args["ants_params"]["template_orientations"],
         )
 
         logger.info(
@@ -284,52 +400,40 @@ class Register(ArgSchemaParser):
             f"Output image dimensions: {img_out.shape} \nOutput image orientation: {out_mat}"
         )
 
-        # convert input data to tiff into reference voxel resolution
         ants_img = ants.from_numpy(img_out, spacing=ants_params["spacing"])
-        fillin = ants.resample_image(
-            ants_img, ants_params["new_spacing"], False, 1
-        )
-        logger.info(f"Size of resampled image: {fillin.shape}")
+        ants_img.set_direction(ants_template.direction)
+        ants_img.set_origin(ants_template.origin)
+        
+        write_and_plot_image(
+            ants_img,
+            data_path=self.args["prep_params"].get("rawdata_path"), 
+            plot_path=self.args["prep_params"].get("rawdata_figpath"), vmin=0, vmax=500)
+    
+        #----------------------------------#
+        # run preprocessing on raw data
+        #----------------------------------#
 
-        downsampled_file_path = Path(
-            f"{self.args['metadata_folder']}/{self.args['downsampled_file']}"
-        )
-        ants.image_write(fillin, str(downsampled_file_path))
+        prep = Preprocess(self.args, ants_img, ants_template)
+        ants_img = prep.run()
+        logger.info(f"Preprocessed input data {ants_img}")
+        
+        #----------------------------------#
+        # register brain image to CCF
+        #----------------------------------#
+        # ants_img = ants.image_read(self.args["prep_params"].get("percNorm_path")) # 
 
-        # convert data to uint16
-        im = io.imread(str(downsampled_file_path)).astype(np.uint16)
+        # register to SPIM template: rigid + SyN
+        rigid_image   = self.rigid_register(ants_template, ants_img)
+        aligned_image = self.register_to_template(ants_template, rigid_image)
+        
+        # aligned_image = ants.image_read(self.args["ants_params"].get("moved_to_template_path")) # 
+        
+        # register to CCF template: apply manual regsitration
+        aligned_image = self.register_to_ccf(ants_ccf, aligned_image)
 
-        downsampled16bit_file_path = Path(
-            f"{self.args['metadata_folder']}/{self.args['downsampled16bit_file']}"
-        )
+        return aligned_image.numpy()
 
-        tifffile.imwrite(str(downsampled16bit_file_path), im)
-        # read images
-        logger.info("Reading reference image")
-        img1 = ants.image_read(os.path.abspath(self.args["reference"]))
-        img2 = ants.image_read(str(downsampled16bit_file_path))
-
-        # register with ants
-        reg12 = ants.registration(
-            img1, img2, "SyN", reg_iterations=[100, 10, 0]
-        )
-
-        # output
-        shutil.copy(
-            reg12["fwdtransforms"][0],
-            self.args["ccf_ls_warp_transforms_file"],
-        )
-        shutil.copy(
-            reg12["fwdtransforms"][1],
-            self.args["affine_transforms_file"],
-        )
-        shutil.copy(
-            reg12["invtransforms"][1],
-            self.args["ls_ccf_warp_transforms_file"],
-        )
-
-        return reg12["warpedmovout"].numpy()
-
+    
     def write_zarr(
         self,
         img_array: np.array,
@@ -444,19 +548,21 @@ class Register(ArgSchemaParser):
         """
         Runs CCF registration
         """
-
         # Creating output folders
         input_data_path = os.path.abspath(self.args["input_data"])
         output_data_path = os.path.abspath(self.args["output_data"])
         metadata_path = os.path.abspath(self.args["metadata_folder"])
-        reference_path = os.path.abspath(self.args["reference"])
+        reg_folder = os.path.abspath(self.args["reg_folder"]) # save registration results
         # input_data_path = glob(f"{input_data_path}_stitched_*/")[0]
 
         logger.info(
-            f"Input data: {input_data_path}\nOutput data: {output_data_path}\nMetadata path: {metadata_path} reference: {reference_path}"
+            f"Input data: {input_data_path}\nOutput data: {output_data_path}\nMetadata path: {metadata_path}"
         )
-
+        
+        logger.info(f"Regsitration results save to: {reg_folder}")
+        
         create_folder(output_data_path)
+        create_folder(reg_folder)
         create_folder(metadata_path)
 
         # read input data (lazy loading)
@@ -514,7 +620,7 @@ class Register(ArgSchemaParser):
             self.args["reference_res"],
             self.args["reference_res"],
         )
-        ants_params["reference"] = reference_path
+
         aligned_image = self.atlas_alignment(img_array, ants_params)
         end_date_time = datetime.now()
 
@@ -525,7 +631,7 @@ class Register(ArgSchemaParser):
                 start_date_time=start_date_time,
                 end_date_time=end_date_time,
                 input_location=str(image_path),
-                output_location=str(image_path),
+                output_location=str(reg_folder),
                 outputs={},
                 code_url="https://github.com/ANTsX/ANTs",
                 code_version=ants.__version__,
@@ -546,6 +652,7 @@ class Register(ArgSchemaParser):
         }
 
         aligned_image_dask = da.from_array(aligned_image)
+        
         self.write_zarr(
             img_array=aligned_image_dask,  # dask array
             physical_pixel_sizes=ants_params["new_spacing"],
@@ -583,7 +690,7 @@ class Register(ArgSchemaParser):
         generate_processing(
             data_processes=data_processes,
             dest_processing=metadata_path,
-            processor_full_name="Camilo Laiton",
+            processor_full_name="Di Wang, Camilo Laiton",
             pipeline_version="1.5.0",
         )
 
@@ -594,7 +701,6 @@ def main(input_config: dict):
     """
     Main function to execute
     """
-
     mod = Register(input_config)
     return mod.run()
 
