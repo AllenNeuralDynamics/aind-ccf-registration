@@ -166,6 +166,20 @@ class Register(ArgSchemaParser):
         img_array = np.squeeze(img_array)
         return img_array
 
+    
+    def _plot_save_img(self, ants_moved, moved_path: PathLike=None) -> None:     
+        # plot and save moved image
+        if moved_path:
+            figpath = moved_path.replace(".nii.gz", "")
+            title = moved_path.replace(".nii.gz", "").split("/")[-1]
+            logger.info(f"Plot aligned image: {figpath}, title: {title}")    
+            plot_antsimgs(ants_moved, figpath, title, vmin=0, vmax=None)
+        
+            logger.info(f"Saving aligned image: {moved_path}")    
+            ants.image_write(ants_moved, moved_path) 
+            logger.info("Done saving")
+            
+            
     def _qc_reg(self, ants_moving, ants_fixed, ants_moved, moved_path: PathLike=None, figpath_name: str="reg") -> None:
         """ 
         Quality control on registration results and write deformed image. 
@@ -203,18 +217,11 @@ class Register(ArgSchemaParser):
             else:
                 # moving and fixed images do not have same dimension
                 plot_reg(*plot_args, **plot_kwargs)
-            
-        # plot moved image
-        if moved_path:
-            figpath = moved_path.replace(".nii.gz", "")
-            title = moved_path.replace(".nii.gz", "").split("/")[-1]
-            logger.info(f"Plot aligned image: {figpath}, title: {title}")    
-            plot_antsimgs(ants_moved, figpath, title, vmin=VMIN, vmax=VMAX)
-        
-            logger.info(f"Saving aligned image: {moved_path}")    
-            ants.image_write(ants_moved, moved_path) 
-            logger.info("Done saving")
+                
+        self._plot_save_img(ants_moved, moved_path) 
 
+
+            
     def rigid_register(self, ants_fixed, ants_moving):
         """ Run rigid regsitration to align brain image to SPIM template
         
@@ -281,7 +288,7 @@ class Register(ArgSchemaParser):
         logger.info(f"\nStart registering to template ....")
 
         if self.args['reference_res'] == 25:
-            reg_iterations = [100, 10, 0] # TODO
+            reg_iterations = [200, 20, 0] # TODO
             # reg_iterations = [1, 0, 0, 0]
         elif self.args['reference_res'] == 10:
             reg_iterations = [400, 200, 40, 0]
@@ -420,7 +427,7 @@ class Register(ArgSchemaParser):
         #----------------------------------#
         # register brain image to CCF
         #----------------------------------#
-        # ants_img = ants.image_read(self.args["prep_params"].get("percNorm_path")) # 
+        ants_img = ants.image_read(self.args["prep_params"].get("percNorm_path")) # 
 
         # register to SPIM template: rigid + SyN
         rigid_image   = self.rigid_register(ants_template, ants_img)
@@ -431,6 +438,30 @@ class Register(ArgSchemaParser):
         # register to CCF template: apply manual regsitration
         aligned_image = self.register_to_ccf(ants_ccf, aligned_image)
 
+        #----------------------------------#
+        # TODO: register CCF annotation to brain space
+        #----------------------------------#
+
+        template_to_brain_transform_path = [
+            f"{self.args['reg_folder']}/rigid_0GenericAffine.mat",
+            f"{self.args['reg_folder']}/0GenericAffine.mat",
+            f"{self.args['reg_folder']}/1InverseWarp.nii.gz",
+        ]
+        
+        ccf_anno_to_template_deformed = ants.image_read(os.path.abspath("../data/ccf_annotation_to_template_moved.nii.gz")) 
+        
+        # apply transform
+        ccf_anno_to_brain_deformed = ants.apply_transforms(
+                fixed = ants_img,
+                moving = ccf_anno_to_template_deformed,
+                transformlist=template_to_brain_transform_path,
+                whichtoinvert = [True, True, False]
+            )
+
+        self._plot_save_img(ccf_anno_to_brain_deformed, 
+                           self.args['ants_params']['ccf_anno_to_brain_path']) 
+
+        
         return aligned_image.numpy()
 
     

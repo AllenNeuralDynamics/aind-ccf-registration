@@ -124,7 +124,13 @@ def main() -> None:
     #--------------------------- TODO ----------------------------#    
     
     subject_dir = "SmartSPIM_685111_2023-09-28_18-19-10_stitched_2024-01-11_10-16-44"
-    
+    subject_dir = "SmartSPIM_694513_2023-09-30_00-03-18_stitched_2024-01-11_10-15-23",
+    subject_dir = "SmartSPIM_709391_2024-01-08_20-45-17_stitched_2024-01-11_15-48-31",
+    subject_dir = "SmartSPIM_710625_2024-03-29_10-22-21_stitched_2024-03-30_22-18-10",
+    subject_dir = "SmartSPIM_693196_2023-09-28_23-12-22_stitched_2024-01-11_10-23-15",
+    subject_dir = "SmartSPIM_693197_2023-09-29_05-18-50_stitched_2024-01-11_13-16-50",
+    subject_dir = "SmartSPIM_694513_2023-09-30_00-03-18_stitched_2024-01-11_10-15-23",
+
     data_folder = os.path.abspath("../data/")
     processing_manifest_path = f"{data_folder}/processing_manifest_639.json" 
     acquisition_path = f"{data_folder}/{subject_dir}/acquisition.json"
@@ -172,7 +178,7 @@ def main() -> None:
     
 #     results_folder = f"../results/ccf_{channel_to_register}"  # TODO
     dataset_id = subject_dir.split("_")[1]
-    results_folder = f"../results/{dataset_id}2ccf_{channel_to_register}"
+    results_folder = f"../scratch/{dataset_id}_to_ccf_{channel_to_register}"
     create_folder(results_folder)
     
     logger = create_logger(output_log_path=results_folder)
@@ -223,15 +229,15 @@ def main() -> None:
         "reg_folder": reg_folder,
         "prep_params": {
             "rawdata_figpath": f"{reg_folder}/prep_zarr_img.jpg",
-            #"rawdata_path": f"{reg_folder}/prep_zarr_img.nii.gz",
+            "rawdata_path": f"{reg_folder}/prep_zarr_img.nii.gz",
             "resample_figpath": f"{reg_folder}/prep_resampled_zarr_img.jpg",
-            #"resample_path": f"{reg_folder}/prep_resampled_zarr_img.nii.gz",
+            "resample_path": f"{reg_folder}/prep_resampled_zarr_img.nii.gz",
             "mask_figpath": f"{reg_folder}/prep_mask.jpg",
-            #"mask_path": f"{reg_folder}/prep_mask.nii.gz",
+            "mask_path": f"{reg_folder}/prep_mask.nii.gz",
             "n4bias_figpath": f"{reg_folder}/prep_n4bias.jpg",
-            #"n4bias_path": f"{reg_folder}/prep_n4bias.nii.gz",
+            "n4bias_path": f"{reg_folder}/prep_n4bias.nii.gz",
             "img_diff_n4bias_figpath": f"{reg_folder}/prep_img_diff_n4bias.jpg",
-            #"img_diff_n4bias_path": f"{reg_folder}/prep_img_diff_n4bias.nii.gz",
+            "img_diff_n4bias_path": f"{reg_folder}/prep_img_diff_n4bias.nii.gz",
             "percNorm_figpath": f"{reg_folder}/prep_percNorm.jpg",
             "percNorm_path": f"{reg_folder}/prep_percNorm.nii.gz",
             },
@@ -251,6 +257,7 @@ def main() -> None:
             "rigid_path": f"{reg_folder}/moved_rigid.nii.gz",
             "moved_to_template_path": f"{reg_folder}/moved_to_template.nii.gz",
             "moved_to_ccf_path": f"{reg_folder}/moved_to_ccf.nii.gz",
+            "ccf_anno_to_brain_path": f"{reg_folder}/moved_ccf_anno_to_brain.nii.gz",
         },
         "OMEZarr_params": {
             "clevel": 1,
