@@ -124,12 +124,12 @@ def main() -> None:
     #--------------------------- TODO ----------------------------#    
     
     subject_dir = "SmartSPIM_694513_2023-09-30_00-03-18_stitched_2024-01-11_10-15-23"
-    # subject_dir = "SmartSPIM_709391_2024-01-08_20-45-17_stitched_2024-01-11_15-48-31"
-    # subject_dir = "SmartSPIM_710625_2024-03-29_10-22-21_stitched_2024-03-30_22-18-10"
+    subject_dir = "SmartSPIM_709391_2024-01-08_20-45-17_stitched_2024-01-11_15-48-31"
+    subject_dir = "SmartSPIM_710625_2024-03-29_10-22-21_stitched_2024-03-30_22-18-10"
 
-    subject_dir = "SmartSPIM_685111_2023-09-28_18-19-10_stitched_2024-01-11_10-16-44"
-    # subject_dir = "SmartSPIM_693196_2023-09-28_23-12-22_stitched_2024-01-11_10-23-15"
-    # subject_dir = "SmartSPIM_693197_2023-09-29_05-18-50_stitched_2024-01-11_13-16-50"
+#     subject_dir = "SmartSPIM_685111_2023-09-28_18-19-10_stitched_2024-01-11_10-16-44"
+    subject_dir = "SmartSPIM_693196_2023-09-28_23-12-22_stitched_2024-01-11_10-23-15"
+    subject_dir = "SmartSPIM_693197_2023-09-29_05-18-50_stitched_2024-01-11_13-16-50"
 
     data_folder = os.path.abspath("../data/")
     processing_manifest_path = f"{data_folder}/processing_manifest_639.json" 
@@ -144,6 +144,7 @@ def main() -> None:
         os.path.abspath("../data/spim_template_to_ccf/syn_0GenericAffine.mat")]
     
     print(f"template_to_ccf_transform_path: {template_to_ccf_transform_path}")
+    ccf_annotation_to_template_moved_path = os.path.abspath("../data/ccf_annotation_to_template_moved.nii.gz")
     
     #-------------------------------------------------------------#    
     
@@ -155,6 +156,7 @@ def main() -> None:
 
     if pipeline_config is None:
         raise ValueError("Please, provide a valid processing manifest")
+        
     # Setting parameters based on pipeline
     sorted_channels = natsorted(pipeline_config["registration"]["channels"])
 
@@ -162,7 +164,6 @@ def main() -> None:
     channel_to_register = sorted_channels[-1]
     
     #-------------------------------------------------------------#    
-    
     
     if not os.path.exists(acquisition_path):
         raise ValueError("Acquisition path does not exist!")
@@ -178,7 +179,6 @@ def main() -> None:
 
     #-------------------------------------------------------------#    
     
-#     results_folder = f"../results/ccf_{channel_to_register}"  # TODO
     dataset_id = subject_dir.split("_")[1]
     results_folder = f"../results/{dataset_id}_to_ccf_{channel_to_register}"
     create_folder(results_folder)
@@ -224,6 +224,7 @@ def main() -> None:
         "template_path": template_path, # SPIM template
         "ccf_reference_path": ccf_reference_path,
         "template_to_ccf_transform_path": template_to_ccf_transform_path,
+        "ccf_annotation_to_template_moved_path": ccf_annotation_to_template_moved_path,
         "reference_res": 25,
         "output_data": os.path.abspath(f"{results_folder}/OMEZarr"),
         "metadata_folder": metadata_folder,

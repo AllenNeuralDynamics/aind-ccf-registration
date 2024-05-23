@@ -291,7 +291,7 @@ class Register(ArgSchemaParser):
         registration_params = {
             "fixed": ants_fixed,
             "moving": ants_moving,
-            "initial_transform": [f"{self.args['reg_folder']}/rigid_0GenericAffine.mat"],
+            "initial_transform": [f"{self.args['reg_folder']}/ls_to_template_rigid_0GenericAffine.mat"],
             "syn_metric": "CC",                     
             "syn_sampling": 2,
             "reg_iterations": reg_iterations, 
@@ -435,8 +435,8 @@ class Register(ArgSchemaParser):
         #----------------------------------#
         # TODO: register CCF annotation to brain space
         #----------------------------------#
-        # TODO
-        ccf_anno_to_template_deformed = ants.image_read(os.path.abspath("../data/ccf_annotation_to_template_moved.nii.gz")) 
+        
+        ccf_anno_to_template_deformed = ants.image_read( self.args["ccf_annotation_to_template_moved_path"] )  
         
         template_to_brain_transform_path = [
             f"{self.args['reg_folder']}/ls_to_template_0GenericAffine.mat",

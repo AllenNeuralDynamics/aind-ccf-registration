@@ -62,6 +62,10 @@ class RegSchema(ArgSchema):
             "description": "Path to the transform that aligns SPIM template to CCF"}
     )
     
+    ccf_annotation_to_template_moved_path = Str(
+        metadata={"required": True, "description": "Path to the deformed CCF annotation in SPIM template space"}
+    )
+    
     output_data = Str(
         metadata={"required": True, "description": "Output file"}
     )
