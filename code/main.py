@@ -123,13 +123,13 @@ def main() -> None:
 
     #--------------------------- TODO ----------------------------#    
     
+    subject_dir = "SmartSPIM_694513_2023-09-30_00-03-18_stitched_2024-01-11_10-15-23"
+    # subject_dir = "SmartSPIM_709391_2024-01-08_20-45-17_stitched_2024-01-11_15-48-31"
+    # subject_dir = "SmartSPIM_710625_2024-03-29_10-22-21_stitched_2024-03-30_22-18-10"
+
     subject_dir = "SmartSPIM_685111_2023-09-28_18-19-10_stitched_2024-01-11_10-16-44"
-    subject_dir = "SmartSPIM_694513_2023-09-30_00-03-18_stitched_2024-01-11_10-15-23",
-    subject_dir = "SmartSPIM_709391_2024-01-08_20-45-17_stitched_2024-01-11_15-48-31",
-    subject_dir = "SmartSPIM_710625_2024-03-29_10-22-21_stitched_2024-03-30_22-18-10",
-    subject_dir = "SmartSPIM_693196_2023-09-28_23-12-22_stitched_2024-01-11_10-23-15",
-    subject_dir = "SmartSPIM_693197_2023-09-29_05-18-50_stitched_2024-01-11_13-16-50",
-    subject_dir = "SmartSPIM_694513_2023-09-30_00-03-18_stitched_2024-01-11_10-15-23",
+    # subject_dir = "SmartSPIM_693196_2023-09-28_23-12-22_stitched_2024-01-11_10-23-15"
+    # subject_dir = "SmartSPIM_693197_2023-09-29_05-18-50_stitched_2024-01-11_13-16-50"
 
     data_folder = os.path.abspath("../data/")
     processing_manifest_path = f"{data_folder}/processing_manifest_639.json" 
@@ -150,14 +150,22 @@ def main() -> None:
     if not os.path.exists(processing_manifest_path):
         raise ValueError("Processing manifest path does not exist!")
 
-    if not os.path.exists(acquisition_path):
-        raise ValueError("Acquisition path does not exist!")
-
     pipeline_config = read_json_as_dict(processing_manifest_path)
     pipeline_config = pipeline_config.get("pipeline_processing")
 
     if pipeline_config is None:
         raise ValueError("Please, provide a valid processing manifest")
+    # Setting parameters based on pipeline
+    sorted_channels = natsorted(pipeline_config["registration"]["channels"])
+
+    # Getting highest wavelenght as default for registration
+    channel_to_register = sorted_channels[-1]
+    
+    #-------------------------------------------------------------#    
+    
+    
+    if not os.path.exists(acquisition_path):
+        raise ValueError("Acquisition path does not exist!")
 
     acquisition_json = read_json_as_dict(acquisition_path)
     acquisition_orientation = acquisition_json.get("axes")
@@ -168,17 +176,11 @@ def main() -> None:
             f"Please, provide a valid acquisition orientation, acquisition: {acquisition_json}"
         )
 
-    # Setting parameters based on pipeline
-    sorted_channels = natsorted(pipeline_config["registration"]["channels"])
-
-    # Getting highest wavelenght as default for registration
-    channel_to_register = sorted_channels[-1]
-
     #-------------------------------------------------------------#    
     
 #     results_folder = f"../results/ccf_{channel_to_register}"  # TODO
     dataset_id = subject_dir.split("_")[1]
-    results_folder = f"../scratch/{dataset_id}_to_ccf_{channel_to_register}"
+    results_folder = f"../results/{dataset_id}_to_ccf_{channel_to_register}"
     create_folder(results_folder)
     
     logger = create_logger(output_log_path=results_folder)
@@ -255,9 +257,9 @@ def main() -> None:
                 "right_to_left": 0,
             }, 
             "rigid_path": f"{reg_folder}/moved_rigid.nii.gz",
-            "moved_to_template_path": f"{reg_folder}/moved_to_template.nii.gz",
-            "moved_to_ccf_path": f"{reg_folder}/moved_to_ccf.nii.gz",
-            "ccf_anno_to_brain_path": f"{reg_folder}/moved_ccf_anno_to_brain.nii.gz",
+            "moved_to_template_path": f"{reg_folder}/moved_ls_to_template.nii.gz",
+            "moved_to_ccf_path": f"{reg_folder}/moved_ls_to_ccf.nii.gz",
+            "ccf_anno_to_brain_path": f"{reg_folder}/moved_ccf_anno_to_ls.nii.gz",
         },
         "OMEZarr_params": {
             "clevel": 1,

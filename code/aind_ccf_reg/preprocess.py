@@ -182,7 +182,9 @@ class Preprocess():
 
         write_and_plot_image(
             ants_img,
-            plot_path=self.args["prep_params"].get("resample_figpath"), vmin=0, vmax=500)
+            data_path=self.args["prep_params"].get("resample_path"),
+            plot_path=self.args["prep_params"].get("resample_figpath"), 
+            vmin=0, vmax=500)
                
         return ants_img
     

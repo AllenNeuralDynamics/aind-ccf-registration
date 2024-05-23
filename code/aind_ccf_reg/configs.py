@@ -111,14 +111,14 @@ class RegSchema(ArgSchema):
         }
     )
 
-    #-------------- DO we need to pass transforms to next capsule-------------------------#
-    downsampled_file = Str(
-        metadata={"required": True, "description": "Downsampled file"}
-    )
+    #-------------- DO we need to pass transforms to next capsule ?#
+    # downsampled_file = Str(
+    #     metadata={"required": True, "description": "Downsampled file"}
+    # )
 
-    downsampled16bit_file = Str(
-        metadata={"required": True, "description": "Downsampled 16bit file"}
-    )
+    # downsampled16bit_file = Str(
+    #     metadata={"required": True, "description": "Downsampled 16bit file"}
+    # )
 
     # affine_transforms_file = Str(
     #     metadata={

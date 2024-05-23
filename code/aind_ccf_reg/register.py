@@ -219,11 +219,11 @@ class Register(ArgSchemaParser):
                 plot_reg(*plot_args, **plot_kwargs)
                 
         self._plot_save_img(ants_moved, moved_path) 
-
-
-            
-    def rigid_register(self, ants_fixed, ants_moving):
-        """ Run rigid regsitration to align brain image to SPIM template
+        
+    
+    def register_to_template(self, ants_fixed, ants_moving):  
+        """ 
+        Run SyN regsitration to align brain image to SPIM template
         
         Parameters
         -------------
@@ -237,6 +237,11 @@ class Register(ArgSchemaParser):
         ANTsImage
             deformed image
         """
+        
+        #----------------------------------#
+        # rigid registration
+        #----------------------------------#
+
         logger.info(f"\nStart computing rigid registration ....")
 
         # run registration
@@ -245,7 +250,7 @@ class Register(ArgSchemaParser):
             "fixed": ants_fixed,
             "moving": ants_moving, 
             "type_of_transform": "Rigid",
-            "outprefix": f"{self.args['reg_folder']}/rigid_", 
+            "outprefix": f"{self.args['reg_folder']}/ls_to_template_rigid_", 
             "mask_all_stages": True,
             "grad_step": 0.25,
             "reg_iterations": (60, 40, 20, 0),
@@ -266,25 +271,10 @@ class Register(ArgSchemaParser):
                      moved_path=self.args["ants_params"]["rigid_path"], 
                      figpath_name=reg_task)
 
-        return ants_moved
+        #----------------------------------#
+        # SyN registration
+        #----------------------------------#
 
-    
-    def register_to_template(self, ants_fixed, ants_moving):  
-        """ 
-        Run SyN regsitration to align brain image to SPIM template
-        
-        Parameters
-        -------------
-        ants_fixed: ANTsImage
-            fixed image
-        ants_moving: ANTsImage
-            moving image
-        
-        Returns
-        -----------
-        ANTsImage
-            deformed image
-        """
         logger.info(f"\nStart registering to template ....")
 
         if self.args['reference_res'] == 25:
@@ -301,10 +291,11 @@ class Register(ArgSchemaParser):
         registration_params = {
             "fixed": ants_fixed,
             "moving": ants_moving,
+            "initial_transform": [f"{self.args['reg_folder']}/rigid_0GenericAffine.mat"],
             "syn_metric": "CC",                     
             "syn_sampling": 2,
             "reg_iterations": reg_iterations, 
-            "outprefix": f"{self.args['reg_folder']}/"}
+            "outprefix": f"{self.args['reg_folder']}/ls_to_template_"}
         
         logger.info(f"Computing SyN registration with parameters: {registration_params}")
         reg = ants.registration(**registration_params)
@@ -321,6 +312,7 @@ class Register(ArgSchemaParser):
                      figpath_name=reg_task)
         
         return ants_moved
+    
     
     def register_to_ccf(self, ants_fixed, ants_moving):  
         """ 
@@ -347,7 +339,7 @@ class Register(ArgSchemaParser):
         start_time = datetime.now()
         ants_moved = ants.apply_transforms(
                 fixed  = ants_fixed,
-                moving = ants_moving ,
+                moving = ants_moving,
                 transformlist=self.args["template_to_ccf_transform_path"] 
             )
         end_time = datetime.now()
@@ -388,7 +380,6 @@ class Register(ArgSchemaParser):
         logger.info(f"Loaded SPIM template {ants_template}")
         logger.info(f"Loaded CCF template {ants_ccf}")
         
-        
         #----------------------------------#
         # orient data to SPIM template's direction
         #----------------------------------#
@@ -425,13 +416,16 @@ class Register(ArgSchemaParser):
         logger.info(f"Preprocessed input data {ants_img}")
         
         #----------------------------------#
-        # register brain image to CCF
+        # register brain image to template
         #----------------------------------#
-        ants_img = ants.image_read(self.args["prep_params"].get("percNorm_path")) # 
+        # ants_img = ants.image_read(self.args["prep_params"].get("percNorm_path")) # 
 
         # register to SPIM template: rigid + SyN
-        rigid_image   = self.rigid_register(ants_template, ants_img)
-        aligned_image = self.register_to_template(ants_template, rigid_image)
+        aligned_image = self.register_to_template(ants_template, ants_img)
+        
+        #----------------------------------#
+        # register brain image to CCF
+        #----------------------------------#
         
         # aligned_image = ants.image_read(self.args["ants_params"].get("moved_to_template_path")) # 
         
@@ -441,26 +435,25 @@ class Register(ArgSchemaParser):
         #----------------------------------#
         # TODO: register CCF annotation to brain space
         #----------------------------------#
-
-        template_to_brain_transform_path = [
-            f"{self.args['reg_folder']}/rigid_0GenericAffine.mat",
-            f"{self.args['reg_folder']}/0GenericAffine.mat",
-            f"{self.args['reg_folder']}/1InverseWarp.nii.gz",
-        ]
-        
+        # TODO
         ccf_anno_to_template_deformed = ants.image_read(os.path.abspath("../data/ccf_annotation_to_template_moved.nii.gz")) 
         
+        template_to_brain_transform_path = [
+            f"{self.args['reg_folder']}/ls_to_template_0GenericAffine.mat",
+            f"{self.args['reg_folder']}/ls_to_template_1InverseWarp.nii.gz",
+        ]
+
         # apply transform
         ccf_anno_to_brain_deformed = ants.apply_transforms(
                 fixed = ants_img,
                 moving = ccf_anno_to_template_deformed,
                 transformlist=template_to_brain_transform_path,
-                whichtoinvert = [True, True, False]
+                whichtoinvert = [True, False],
+                interpolator = 'genericLabel'
             )
 
         self._plot_save_img(ccf_anno_to_brain_deformed, 
                            self.args['ants_params']['ccf_anno_to_brain_path']) 
-
         
         return aligned_image.numpy()
 
