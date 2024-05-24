@@ -8,6 +8,7 @@ import multiprocessing
 import os
 import subprocess
 from datetime import datetime
+import glob
 
 from aind_ccf_reg import register, utils
 from natsort import natsorted
@@ -116,10 +117,13 @@ def main() -> None:
     """
     Main function to register a dataset
     """
-#     data_folder = os.path.abspath("../data/")
-#     processing_manifest_path = f"{data_folder}/processing_manifest.json"
-#     acquisition_path = f"{data_folder}/acquisition.json"
-#     processing_manifest_path = f"{data_folder}/smartspim_test_dataset/derivatives/processing_manifest.json"
+    
+    """
+    data_folder = os.path.abspath("../data/")
+    processing_manifest_path = f"{data_folder}/processing_manifest.json"
+    acquisition_path = f"{data_folder}/acquisition.json"
+    processing_manifest_path = f"{data_folder}/smartspim_test_dataset/derivatives/processing_manifest.json"
+    """
 
     #--------------------------- TODO ----------------------------#    
     
@@ -127,9 +131,9 @@ def main() -> None:
     subject_dir = "SmartSPIM_709391_2024-01-08_20-45-17_stitched_2024-01-11_15-48-31"
     subject_dir = "SmartSPIM_710625_2024-03-29_10-22-21_stitched_2024-03-30_22-18-10"
 
-#     subject_dir = "SmartSPIM_685111_2023-09-28_18-19-10_stitched_2024-01-11_10-16-44"
-    subject_dir = "SmartSPIM_693196_2023-09-28_23-12-22_stitched_2024-01-11_10-23-15"
-    subject_dir = "SmartSPIM_693197_2023-09-29_05-18-50_stitched_2024-01-11_13-16-50"
+    # subject_dir = "SmartSPIM_685111_2023-09-28_18-19-10_stitched_2024-01-11_10-16-44"
+    # subject_dir = "SmartSPIM_693196_2023-09-28_23-12-22_stitched_2024-01-11_10-23-15"
+    # subject_dir = "SmartSPIM_693197_2023-09-29_05-18-50_stitched_2024-01-11_13-16-50"
 
     data_folder = os.path.abspath("../data/")
     processing_manifest_path = f"{data_folder}/processing_manifest_639.json" 
@@ -157,11 +161,19 @@ def main() -> None:
     if pipeline_config is None:
         raise ValueError("Please, provide a valid processing manifest")
         
+    """
     # Setting parameters based on pipeline
     sorted_channels = natsorted(pipeline_config["registration"]["channels"])
 
     # Getting highest wavelenght as default for registration
     channel_to_register = sorted_channels[-1]
+    """
+    
+    all_zarr = glob.glob(f'{data_folder}/{subject_dir}/image_tile_fusing/OMEZarr/*.zarr')
+    all_zarr = sorted(all_zarr)
+    all_zarr = [ zarr.split("/")[-1].replace(".zarr", "") for zarr in all_zarr]
+    channel_to_register = all_zarr[-1]
+    # lower_channels      = all_zarr[:-1]
     
     #-------------------------------------------------------------#    
     
@@ -184,6 +196,7 @@ def main() -> None:
     create_folder(results_folder)
     
     logger = create_logger(output_log_path=results_folder)
+    logger.info(f"channel_to_register: {channel_to_register}")
     logger.info(
         f"Processing manifest {pipeline_config} provided in path {processing_manifest_path}"
     )

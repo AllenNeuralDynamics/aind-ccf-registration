@@ -167,16 +167,16 @@ class Register(ArgSchemaParser):
         return img_array
 
     
-    def _plot_save_img(self, ants_moved, moved_path: PathLike=None) -> None:     
-        # plot and save moved image
-        if moved_path:
-            figpath = moved_path.replace(".nii.gz", "")
-            title = moved_path.replace(".nii.gz", "").split("/")[-1]
-            logger.info(f"Plot aligned image: {figpath}, title: {title}")    
-            plot_antsimgs(ants_moved, figpath, title, vmin=0, vmax=None)
+    def _plot_write_antsimg(self, ants_img, img_path: PathLike=None, vmin:float=VMIN, vmax:float=VMAX) -> None:     
+        """plot and save moved image"""
+        if img_path:
+            figpath = img_path.replace(".nii.gz", "")
+            title = img_path.replace(".nii.gz", "").split("/")[-1]
+            logger.info(f"Plotting image: {figpath}, title: {title}")    
+            plot_antsimgs(ants_img, figpath, title, vmin=vmin, vmax=vmax)
         
-            logger.info(f"Saving aligned image: {moved_path}")    
-            ants.image_write(ants_moved, moved_path) 
+            logger.info(f"Writing image: {img_path}")    
+            ants.image_write(ants_img, img_path) 
             logger.info("Done saving")
             
             
@@ -218,7 +218,7 @@ class Register(ArgSchemaParser):
                 # moving and fixed images do not have same dimension
                 plot_reg(*plot_args, **plot_kwargs)
                 
-        self._plot_save_img(ants_moved, moved_path) 
+        self._plot_write_antsimg(ants_moved, moved_path) 
         
     
     def register_to_template(self, ants_fixed, ants_moving):  
@@ -258,11 +258,11 @@ class Register(ArgSchemaParser):
         }
 
         logger.info(f"Computing rigid registration with parameters: {registration_params}")
-        reg = ants.registration(**registration_params)
+        rigid_reg = ants.registration(**registration_params)
         end_time = datetime.now()
-        logger.info(f"Rigid registration Complete, execution time: {end_time - start_time} s -- image {reg}")
+        logger.info(f"Rigid registration Complete, execution time: {end_time - start_time} s -- image {rigid_reg}")
 
-        ants_moved = reg["warpedmovout"]
+        ants_moved = rigid_reg["warpedmovout"]
         
         reg_task = "reg_rigid"
         self._qc_reg(ants_moving, 
@@ -278,8 +278,7 @@ class Register(ArgSchemaParser):
         logger.info(f"\nStart registering to template ....")
 
         if self.args['reference_res'] == 25:
-            reg_iterations = [200, 20, 0] # TODO
-            # reg_iterations = [1, 0, 0, 0]
+            reg_iterations = [200, 20, 0] 
         elif self.args['reference_res'] == 10:
             reg_iterations = [400, 200, 40, 0]
         else:
@@ -291,11 +290,12 @@ class Register(ArgSchemaParser):
         registration_params = {
             "fixed": ants_fixed,
             "moving": ants_moving,
-            "initial_transform": [f"{self.args['reg_folder']}/ls_to_template_rigid_0GenericAffine.mat"],
+            # "initial_transform": [f"{self.args['reg_folder']}/ls_to_template_rigid_0GenericAffine.mat"],
+            "initial_transform": rigid_reg["fwdtransforms"][0],
             "syn_metric": "CC",                     
             "syn_sampling": 2,
             "reg_iterations": reg_iterations, 
-            "outprefix": f"{self.args['reg_folder']}/ls_to_template_"}
+            "outprefix": f"{self.args['reg_folder']}/ls_to_template_SyN_"}
         
         logger.info(f"Computing SyN registration with parameters: {registration_params}")
         reg = ants.registration(**registration_params)
@@ -338,8 +338,8 @@ class Register(ArgSchemaParser):
         
         start_time = datetime.now()
         ants_moved = ants.apply_transforms(
-                fixed  = ants_fixed,
-                moving = ants_moving,
+                fixed=ants_fixed,
+                moving=ants_moving,
                 transformlist=self.args["template_to_ccf_transform_path"] 
             )
         end_time = datetime.now()
@@ -410,7 +410,10 @@ class Register(ArgSchemaParser):
         #----------------------------------#
         # run preprocessing on raw data
         #----------------------------------#
-
+        logger.info(f"{'=='*40}")
+        logger.info(f"Start preprocessing....")
+        logger.info(f"{'=='*40}")
+        
         prep = Preprocess(self.args, ants_img, ants_template)
         ants_img = prep.run()
         logger.info(f"Preprocessed input data {ants_img}")
@@ -418,6 +421,10 @@ class Register(ArgSchemaParser):
         #----------------------------------#
         # register brain image to template
         #----------------------------------#
+        logger.info(f"{'=='*40}")
+        logger.info(f"Start registering brain image to template....")
+        logger.info(f"{'=='*40}")
+        
         # ants_img = ants.image_read(self.args["prep_params"].get("percNorm_path")) # 
 
         # register to SPIM template: rigid + SyN
@@ -426,6 +433,9 @@ class Register(ArgSchemaParser):
         #----------------------------------#
         # register brain image to CCF
         #----------------------------------#
+        logger.info(f"{'=='*40}")
+        logger.info(f"Start registering brain image to CCF....")
+        logger.info(f"{'=='*40}")
         
         # aligned_image = ants.image_read(self.args["ants_params"].get("moved_to_template_path")) # 
         
@@ -433,14 +443,18 @@ class Register(ArgSchemaParser):
         aligned_image = self.register_to_ccf(ants_ccf, aligned_image)
 
         #----------------------------------#
-        # TODO: register CCF annotation to brain space
+        # register CCF annotation to brain space
+        # TODO: register_to_template() return transforms
         #----------------------------------#
+        logger.info(f"{'=='*40}")
+        logger.info(f"Start registering CCF annotation to brain space....")
+        logger.info(f"{'=='*40}")
         
         ccf_anno_to_template_deformed = ants.image_read( self.args["ccf_annotation_to_template_moved_path"] )  
         
         template_to_brain_transform_path = [
-            f"{self.args['reg_folder']}/ls_to_template_0GenericAffine.mat",
-            f"{self.args['reg_folder']}/ls_to_template_1InverseWarp.nii.gz",
+            f"{self.args['reg_folder']}/ls_to_template_SyN_0GenericAffine.mat",
+            f"{self.args['reg_folder']}/ls_to_template_SyN_1InverseWarp.nii.gz",
         ]
 
         # apply transform
@@ -452,8 +466,9 @@ class Register(ArgSchemaParser):
                 interpolator = 'genericLabel'
             )
 
-        self._plot_save_img(ccf_anno_to_brain_deformed, 
-                           self.args['ants_params']['ccf_anno_to_brain_path']) 
+        self._plot_write_antsimg(ccf_anno_to_brain_deformed, 
+                                self.args['ants_params']['ccf_anno_to_brain_path'],
+                                vmin=0, vmax=None) 
         
         return aligned_image.numpy()
 
