@@ -242,7 +242,7 @@ class Register(ArgSchemaParser):
         # rigid registration
         #----------------------------------#
 
-        logger.info(f"\nStart computing rigid registration ....")
+        logger.info(f"Start computing rigid registration ....")
 
         # run registration
         start_time = datetime.now()
@@ -275,7 +275,7 @@ class Register(ArgSchemaParser):
         # SyN registration
         #----------------------------------#
 
-        logger.info(f"\nStart registering to template ....")
+        logger.info(f"Start registering to template ....")
 
         if self.args['reference_res'] == 25:
             reg_iterations = [200, 20, 0] 
@@ -330,7 +330,7 @@ class Register(ArgSchemaParser):
         ANTsImage
             deformed image
         """
-        logger.info("\nStart registering to CCF ....")
+        logger.info("Start registering to CCF ....")
         logger.info(f"Register to CCF with: {self.args['template_to_ccf_transform_path']}")
 
         # for visualizing registration results
@@ -376,7 +376,7 @@ class Register(ArgSchemaParser):
     
         logger.info("Reading reference images")
         ants_template = ants.image_read(os.path.abspath(self.args["template_path"])) # SPIM template
-        ants_ccf      = ants.image_read(os.path.abspath(self.args["ccf_reference_path"])) # CCF template 
+        ants_ccf = ants.image_read(os.path.abspath(self.args["ccf_reference_path"])) # CCF template 
         logger.info(f"Loaded SPIM template {ants_template}")
         logger.info(f"Loaded CCF template {ants_ccf}")
         
