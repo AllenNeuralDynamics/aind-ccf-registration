@@ -116,7 +116,6 @@ def main() -> None:
     """
     Main function to register a dataset
     """
-    
     subject_dir = "SmartSPIM_714635_2024-03-18_10-47-48"
     subject_dir = "SmartSPIM_725271_2024-05-22_17-24-06"
     subject_dir = "SmartSPIM_725379_2024-04-25_17-02-42"
