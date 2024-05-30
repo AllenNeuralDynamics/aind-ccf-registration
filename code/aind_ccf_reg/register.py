@@ -9,8 +9,6 @@ Pipeline:
 Quality control on registration:
 (1) visualization: plot the overlay/difference image between deformed and fixed images
 (2) TODO: compute the similarity metics to automatically detect registration failure
-
-# TODO: need to pass transforms that aligns brain image to CCF to aind-smartspim-cell-quantification capsule
 """
 import logging
 import multiprocessing
@@ -254,7 +252,7 @@ class Register(ArgSchemaParser):
             "mask_all_stages": True,
             "grad_step": 0.25,
             "reg_iterations": (60, 40, 20, 0),
-            "aff_metric": "mattes"            
+            "aff_metric": "mattes"
         }
 
         logger.info(f"Computing rigid registration with parameters: {registration_params}")

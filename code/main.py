@@ -54,6 +54,7 @@ def create_logger(output_log_path: PathLike) -> logging.Logger:
 
     return logger
 
+
 def read_json_as_dict(filepath: str) -> dict:
     """
     Reads a json as dictionary.
@@ -116,33 +117,22 @@ def main() -> None:
     """
     Main function to register a dataset
     """
-    
-    subject_dir = "SmartSPIM_714635_2024-03-18_10-47-48"
-    subject_dir = "SmartSPIM_725271_2024-05-22_17-24-06"
-    subject_dir = "SmartSPIM_725379_2024-04-25_17-02-42"
-
-    input_data = glob.glob(f"../data/{subject_dir}*_stitched_*/image_tile_fusing/OMEZarr/")
-    if input_data is None:
-        raise ValueError("Please attach the stitched data asset for registration!")
-        
-    input_data = input_data[0]
-        
-    data_folder = os.path.abspath(f"../data/{subject_dir}/")
-    processing_manifest_path = f"{data_folder}/derivatives/processing_manifest.json"
+    data_folder = os.path.abspath("../data/")
+    processing_manifest_path = f"{data_folder}/processing_manifest.json"
     acquisition_path = f"{data_folder}/acquisition.json"
 
     if not os.path.exists(processing_manifest_path):
         raise ValueError("Processing manifest path does not exist!")
-
+    
     if not os.path.exists(acquisition_path):
         raise ValueError("Acquisition path does not exist!")
 
     pipeline_config = read_json_as_dict(processing_manifest_path)
     pipeline_config = pipeline_config.get("pipeline_processing")
-
+    
     if pipeline_config is None:
         raise ValueError("Please, provide a valid processing manifest")
-
+        
     acquisition_json = read_json_as_dict(acquisition_path)
     acquisition_orientation = acquisition_json.get("axes")
 
@@ -157,20 +147,15 @@ def main() -> None:
     # Getting highest wavelenght as default for registration
     channel_to_register = sorted_channels[-1]
 
-    subject_id = subject_dir.split("_")[1]
-    results_folder = f"../results/{subject_id}_ccf_{channel_to_register}"
+    results_folder = f"../results/ccf_{channel_to_register}"
     create_folder(results_folder)
-
-    metadata_folder = os.path.abspath(f"{results_folder}/metadata")
-
+    
     logger = create_logger(output_log_path=results_folder)
-
     logger.info(
         f"Processing manifest {pipeline_config} provided in path {processing_manifest_path}"
     )
-    
     logger.info(f"channel_to_register: {channel_to_register}")
-    
+
     reg_folder = os.path.abspath(f"{results_folder}/registration")
     metadata_folder = os.path.abspath(f"{results_folder}/metadata")
 
@@ -196,8 +181,9 @@ def main() -> None:
     profile_process.start()
 
     logger.info(f"{'='*40} SmartSPIM CCF Registration {'='*40}")
-    
-    #---------------------------------------------------#
+
+    #-------------------------------------------------------------#    
+
     # path to SPIM template, CCF and template-to-CCF registration
     template_path = os.path.abspath("../data/lightsheet_template_ccf_registration/smartspim_lca_template_25.nii.gz")
     ccf_reference_path = os.path.abspath("../data/lightsheet_template_ccf_registration/ccf_average_template_25.nii.gz") 
@@ -206,11 +192,11 @@ def main() -> None:
         os.path.abspath("../data/lightsheet_template_ccf_registration/spim_template_to_ccf_syn_0GenericAffine.mat")]
     print(f"template_to_ccf_transform_path: {template_to_ccf_transform_path}")
     ccf_annotation_to_template_moved_path = os.path.abspath("../data/lightsheet_template_ccf_registration/ccf_annotation_to_template_moved.nii.gz")
+
+    #-------------------------------------------------------------#    
     
-    #---------------------------------------------------#
     example_input = {
-#         "input_data": "../data/fused", # TODO
-        "input_data": input_data,
+        "input_data": "../data/fused", 
         "input_channel": channel_to_register,
         "input_scale": pipeline_config["registration"]["input_scale"],
         "input_orientation": acquisition_orientation,
@@ -228,13 +214,13 @@ def main() -> None:
             "rawdata_figpath": f"{reg_folder}/prep_zarr_img.jpg",
             "rawdata_path": f"{reg_folder}/prep_zarr_img.nii.gz",
             "resample_figpath": f"{reg_folder}/prep_resampled_zarr_img.jpg",
-            "resample_path": f"{reg_folder}/prep_resampled_zarr_img.nii.gz",
+            # "resample_path": f"{reg_folder}/prep_resampled_zarr_img.nii.gz",
             "mask_figpath": f"{reg_folder}/prep_mask.jpg",
-            "mask_path": f"{reg_folder}/prep_mask.nii.gz",
+            # "mask_path": f"{reg_folder}/prep_mask.nii.gz",
             "n4bias_figpath": f"{reg_folder}/prep_n4bias.jpg",
-            "n4bias_path": f"{reg_folder}/prep_n4bias.nii.gz",
+            # "n4bias_path": f"{reg_folder}/prep_n4bias.nii.gz",
             "img_diff_n4bias_figpath": f"{reg_folder}/prep_img_diff_n4bias.jpg",
-            "img_diff_n4bias_path": f"{reg_folder}/prep_img_diff_n4bias.nii.gz",
+            # "img_diff_n4bias_path": f"{reg_folder}/prep_img_diff_n4bias.nii.gz",
             "percNorm_figpath": f"{reg_folder}/prep_percNorm.jpg",
             "percNorm_path": f"{reg_folder}/prep_percNorm.nii.gz",
             },
