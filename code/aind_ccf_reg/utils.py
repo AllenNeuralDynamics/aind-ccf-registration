@@ -1,6 +1,7 @@
 """
 File for utilities
 """
+
 import logging
 import multiprocessing
 import os
@@ -14,9 +15,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 import psutil
 import pydantic
+from aind_ccf_reg.configs import PathLike
 from aind_data_schema.core.processing import (DataProcess, PipelineProcess,
                                               Processing)
-from aind_ccf_reg.configs import PathLike
+
 
 def create_folder(dest_dir: PathLike, verbose: Optional[bool] = False) -> None:
     """
@@ -474,8 +476,7 @@ def print_system_information(logger: logging.Logger):
     logger.info(f"Total Bytes Sent: {get_size(net_io.bytes_sent)}")
     logger.info(f"Total Bytes Received: {get_size(net_io.bytes_recv)}")
 
-    
-    
+
 def save_string_to_txt(txt: str, filepath: str, mode="w") -> None:
     """
     Saves a text in a file in the given mode.
@@ -495,4 +496,3 @@ def save_string_to_txt(txt: str, filepath: str, mode="w") -> None:
 
     with open(filepath, mode) as file:
         file.write(txt + "\n")
-

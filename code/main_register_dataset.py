@@ -2,18 +2,18 @@
 Main used in code ocean to execute capsule
 """
 
+import glob
 import json
 import logging
 import multiprocessing
 import os
 import subprocess
 from datetime import datetime
-import glob
 
 from aind_ccf_reg import register, utils
-from natsort import natsorted
 from aind_ccf_reg.configs import PathLike
 from aind_ccf_reg.utils import create_folder
+from natsort import natsorted
 
 
 def create_logger(output_log_path: PathLike) -> logging.Logger:
@@ -28,7 +28,7 @@ def create_logger(output_log_path: PathLike) -> logging.Logger:
     Returns
     -----------
     logging.Logger
-        Created logger 
+        Created logger
         pointing to the file path.
     """
     CURR_DATE_TIME = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
@@ -46,13 +46,14 @@ def create_logger(output_log_path: PathLike) -> logging.Logger:
         force=True,
     )
 
-#     logging.disable("DEBUG")
+    #     logging.disable("DEBUG")
     logging.disable(logging.DEBUG)
     logger = logging.getLogger(__name__)
     logger.setLevel(logging.DEBUG)
     logger.info(f"Execution datetime: {CURR_DATE_TIME}")
 
     return logger
+
 
 def read_json_as_dict(filepath: str) -> dict:
     """
@@ -79,6 +80,7 @@ def read_json_as_dict(filepath: str) -> dict:
             dictionary = json.load(json_file)
 
     return dictionary
+
 
 def execute_command_helper(command: str, print_command: bool = False) -> None:
     """
@@ -120,14 +122,20 @@ def main() -> None:
     subject_dir = "SmartSPIM_725271_2024-05-22_17-24-06"
     subject_dir = "SmartSPIM_725379_2024-04-25_17-02-42"
 
-    input_data = glob.glob(f"../data/{subject_dir}*_stitched_*/image_tile_fusing/OMEZarr/")
+    input_data = glob.glob(
+        f"../data/{subject_dir}*_stitched_*/image_tile_fusing/OMEZarr/"
+    )
     if input_data is None:
-        raise ValueError("Please attach the stitched data asset for registration!")
-        
+        raise ValueError(
+            "Please attach the stitched data asset for registration!"
+        )
+
     input_data = input_data[0]
-        
+
     data_folder = os.path.abspath(f"../data/{subject_dir}/")
-    processing_manifest_path = f"{data_folder}/derivatives/processing_manifest.json"
+    processing_manifest_path = (
+        f"{data_folder}/derivatives/processing_manifest.json"
+    )
     acquisition_path = f"{data_folder}/acquisition.json"
 
     if not os.path.exists(processing_manifest_path):
@@ -167,9 +175,9 @@ def main() -> None:
     logger.info(
         f"Processing manifest {pipeline_config} provided in path {processing_manifest_path}"
     )
-    
+
     logger.info(f"channel_to_register: {channel_to_register}")
-    
+
     reg_folder = os.path.abspath(f"{results_folder}/registration")
     metadata_folder = os.path.abspath(f"{results_folder}/metadata")
 
@@ -195,26 +203,37 @@ def main() -> None:
     profile_process.start()
 
     logger.info(f"{'='*40} SmartSPIM CCF Registration {'='*40}")
-    
-    #---------------------------------------------------#
+
+    # ---------------------------------------------------#
     # path to SPIM template, CCF and template-to-CCF registration
-    template_path = os.path.abspath("../data/lightsheet_template_ccf_registration/smartspim_lca_template_25.nii.gz")
-    ccf_reference_path = os.path.abspath("../data/lightsheet_template_ccf_registration/ccf_average_template_25.nii.gz") 
+    template_path = os.path.abspath(
+        "../data/lightsheet_template_ccf_registration/smartspim_lca_template_25.nii.gz"
+    )
+    ccf_reference_path = os.path.abspath(
+        "../data/lightsheet_template_ccf_registration/ccf_average_template_25.nii.gz"
+    )
     template_to_ccf_transform_path = [
-        os.path.abspath("../data/lightsheet_template_ccf_registration/spim_template_to_ccf_syn_1Warp.nii.gz"),
-        os.path.abspath("../data/lightsheet_template_ccf_registration/spim_template_to_ccf_syn_0GenericAffine.mat")]
+        os.path.abspath(
+            "../data/lightsheet_template_ccf_registration/spim_template_to_ccf_syn_1Warp.nii.gz"
+        ),
+        os.path.abspath(
+            "../data/lightsheet_template_ccf_registration/spim_template_to_ccf_syn_0GenericAffine.mat"
+        ),
+    ]
     print(f"template_to_ccf_transform_path: {template_to_ccf_transform_path}")
-    ccf_annotation_to_template_moved_path = os.path.abspath("../data/lightsheet_template_ccf_registration/ccf_annotation_to_template_moved.nii.gz")
-    
-    #---------------------------------------------------#
+    ccf_annotation_to_template_moved_path = os.path.abspath(
+        "../data/lightsheet_template_ccf_registration/ccf_annotation_to_template_moved.nii.gz"
+    )
+
+    # ---------------------------------------------------#
     example_input = {
-#         "input_data": "../data/fused", # TODO
+        #         "input_data": "../data/fused", # TODO
         "input_data": input_data,
         "input_channel": channel_to_register,
         "input_scale": pipeline_config["registration"]["input_scale"],
         "input_orientation": acquisition_orientation,
         "bucket_path": "aind-open-data",
-        "template_path": template_path, # SPIM template
+        "template_path": template_path,  # SPIM template
         "ccf_reference_path": ccf_reference_path,
         "template_to_ccf_transform_path": template_to_ccf_transform_path,
         "ccf_annotation_to_template_moved_path": ccf_annotation_to_template_moved_path,
@@ -222,6 +241,7 @@ def main() -> None:
         "output_data": os.path.abspath(f"{results_folder}/OMEZarr"),
         "metadata_folder": metadata_folder,
         "code_url": "https://github.com/AllenNeuralDynamics/aind-ccf-registration",
+        "results_folder": results_folder,
         "reg_folder": reg_folder,
         "prep_params": {
             "rawdata_figpath": f"{reg_folder}/prep_zarr_img.jpg",
@@ -231,12 +251,12 @@ def main() -> None:
             "mask_figpath": f"{reg_folder}/prep_mask.jpg",
             "mask_path": f"{reg_folder}/prep_mask.nii.gz",
             "n4bias_figpath": f"{reg_folder}/prep_n4bias.jpg",
-            "n4bias_path": f"{reg_folder}/prep_n4bias.nii.gz",
-            "img_diff_n4bias_figpath": f"{reg_folder}/prep_img_diff_n4bias.jpg",
-            "img_diff_n4bias_path": f"{reg_folder}/prep_img_diff_n4bias.nii.gz",
+            # "n4bias_path": f"{reg_folder}/prep_n4bias.nii.gz",
+            # "img_diff_n4bias_figpath": f"{reg_folder}/prep_img_diff_n4bias.jpg",
+            # "img_diff_n4bias_path": f"{reg_folder}/prep_img_diff_n4bias.nii.gz",
             "percNorm_figpath": f"{reg_folder}/prep_percNorm.jpg",
             "percNorm_path": f"{reg_folder}/prep_percNorm.nii.gz",
-            },
+        },
         "ants_params": {
             "spacing": (0.0144, 0.0144, 0.016),
             "unit": "millimetre",
@@ -244,15 +264,15 @@ def main() -> None:
             #     "anterior_to_posterior": 0,
             #     "superior_to_inferior": 1,
             #     "left_to_right": 2,
-            # }, 
+            # },
             "template_orientations": {
                 "anterior_to_posterior": 1,
                 "superior_to_inferior": 2,
                 "right_to_left": 0,
-            }, 
+            },
             "rigid_path": f"{reg_folder}/moved_rigid.nii.gz",
             "moved_to_template_path": f"{reg_folder}/moved_ls_to_template.nii.gz",
-            "moved_to_ccf_path": f"{reg_folder}/moved_ls_to_ccf.nii.gz",
+            "moved_to_ccf_path": f"{results_folder}/moved_ls_to_ccf.nii.gz",
             "ccf_anno_to_brain_path": f"{reg_folder}/moved_ccf_anno_to_ls.nii.gz",
         },
         "OMEZarr_params": {
