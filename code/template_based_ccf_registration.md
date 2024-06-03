@@ -1,54 +1,71 @@
 # Template-based smartspim-ccf registration
 
-This capsule is used to register SmartSPIM datasets to CCF Allen Atlas via SPIM template at 25 um.
+This capsule is used to register SmartSPIM datasets to CCF Allen Atlas via the SPIM template at 25 um.
 `main.py` is compatible with the `aind-smartspim-pipeline`.
-`main_register_dataset.py` is used to regsiter a stitched testing dataset.
 It assumes that the fused image comes in OME-Zarr format with different multiscales.
 At this point, we are using the 3rd multiscale from the original resolution for registration.
 
-Workflow of template-based smartSPIM CCF registration:
+## Workflow 
+The workflow of the template-based smartSPIM-CCF registration:
 1. preprocessing 
-    - resample the raw image to isotropic to have the same resolution as the SPIM template.
-    - masking, using Li thresholding to segment ROI
-    - N4 bias correction
-    - intensity normalization, using 2nd and 98th percentile normalization
-2. register the resulting preprocessed image from step 1 to the SPIM template using ANTs (rigid + SyN). By default, the highest channel will be used for registration. 
-3. register the resulting moved image from step 2 to the CCF Allen Atlas using the template-to-CCF transforms computed by Yoni.
+    - resample the raw image to isotropic to have the same resolution as the SPIM template. 
+    - masking, using Li thresholding to segment ROI.
+    - N4 bias correction.
+    - intensity normalization, using 2nd and 98th percentile normalization.
+2. register the resulting preprocessed image from step 1 to the SPIM template using ANTs (rigid + SyN). 
+3. register the resulting moved image from step 2 to the CCF Allen Atlas using the [template-to-CCF transforms](https://codeocean.allenneuraldynamics.org/data-assets/97d978ca-f328-49e0-ae6d-3e4544afcf02/lightsheet_template_ccf_registration?filters=N4IgZglgNgLgpgJxALhAQylEAaEBHAV0QE8UR4BbAByjXgFoYB7HEAZyYRjIGME46cACashcNjxQwERXFTQBzOCgCMcxAAVFy5ACYADLjRCAbmgB2PYSmABfXObQUdIKBAUALGGw9w4MAH1KGkEAnh4wAP4FCDZpOggmc1FxPggqGETk1AAROjQAAjBOAuDaBgAjNDZhAoBhOoAxAujY%2BMykgroC3QBWAoIKbAKISygCIVGFAoBlCjQuGY0ASQBZAoAVOGpyuAKTAGYAOhVDeqbhiyFShAs2YoQKNlKPbox3c1LtkPhSpnPGpdzNcGs0LOYmDAEp1Rl8doICmx5FYjgAdZK4KEKNgoADaIHCYBAAF1cABrUYiVBCfI1bi4NgQABeOlOugAHL0AGzsgDsvN0uEgUHEKF6uBpULpOOQuNAECpICEvTAAE40GgwLz6Gh2TxdPQACxaw30VW9MT0FQHODsrloODmh2q1iZGAishzBYwJZrTbfXb7Y6nTb-UEFABKcBicVuHU%2BBEZ5mm83MBAwBVoFTgUGe3T6AwoR391E4C2I%2B0QjKSAG4CgB3aBQArZlpwEJWIRHVgUJgEczcVBIiAUIIB0LMMIRFIi%2BBUsAYGr2eWKg76Cpgdfhehcw1c7WGiqG1U6lT809oFSG3TGsAqMBc10Qd0uL2LFbrAAydQAgiWfnshwnPoIyfBQFADOYz55jABQUAQsDpCKbYcOM8Y4rgvb9oO7DzFww6jlAPBoGO8LwDO-jWMgC65nAy4gAqZC8qqG6qvoBwGr0ERgEa7HsvQFS6BU-HsmgN4LvoqrsnABwVE%2BL5kD%2BmBwJ8qx9jU9RMOBnR1EwnCTI4vyNLczj1pwZIFAAFMsA6II4UAAJQ9n2A5kBgIrmAEWE1FORISjmlHzoudHYCuZD6A%2BPAqKqXI8PQ7EHGgRo8PaOqctqmrcmucC6LoaDcvJHqoG%2BPofgEPK9CoVUBAYugHPFJ4cgEKj8dFVr6AEcTPjwvhCDV%2Bg3vFKhWiozX6FaXJGoaznYZ6eGlWs5WclVo21fVkn0E1LVWiepydW6PXCP1g36MN1WnBNU0UXOKA0UuoUMYqKgVLyxqvRUAkVPo42HvlaVcpNvS8jwhqnIaNKqpuhWvvNvqrOVqqGpVBzHetJ5rgE33xfVLX7d1vXHaap0jWNVq9JtBwza5xWw2VXKI8jqMNfQGNY%2BxVrsnjMCHX1tVE2do0XSo5N1ddVF3SFYWoDwQhgGIPAHPxcBcgIRrslU9DsoaINmnyGpgL05rsrofnkM%2BRUgCVcMBLykkHKqq0Dfz8WcwYRrk2eXM84TQ0k8LassyoVM4VbZW26q9uOydw36K7P0e7yXsE3zvvneThr8QcQf%2BbO4vBfRjGoCq%2BjKsr43mr0BrHuyw26iocUqEIvLspJvJwPX7KU5i5sw961u8qcXJ9D77O6KqpO5Zto1ddzydO9jLMdZP22nMHc192Hg-Dyno-jxdk%2B6NPB1zyd9UY8vrX6GLQW0QXipwAbvJy2gcXMS3au6EImu2%2BN%2Bj08YYBNxwB4PoSQ3cFI0w3otemWcYpMw2k1OqVoDS5STkdHeAsJ4416GvSB75oER2ilyeBjVXY4xQboNBvN57E3OuNJBwtr63Xzg9Qu6BegVCEPTKw9AhA13jilU8d5NZcn0KDNi%2BpeSXmhuvfB8MYHRUTmtZmY9MYe34r0DqM9vYYL9jjQGV9MIuRDrTAhsClEDTRptce%2Bh1H0E0VQkemDrSXU0Uw6iLCpYgGPMIXoHFtRgAOAKI0XCDR634sRHgFpVQcisE-GReCFrwwFN9fcI9TTDxUJNNquhE7aJPkTD2vRmoGiyUaF0RjZqJP7gYP%2BFiToZOKWUnJeTj7oJoUUkpl1jzuIlnfMgqoeBt0NAcGk39toZ2BprK8tcKhcgXOyaSYBDQ9PARbUOi0B7sjYoadJm1E60JPIbRxO8Mmcz-gvU6uDLamOSS1HZezcmYzOkc8e%2BT2kNM2ucya7Mrk50Csw2%2BrDFQChbsJEBmtQEHn5GEoSw1NFcg4mAOqzFkUJJuVA5JN5hZR0KWTZ58V6HEPedQk6HtiFu16PxQ%2B1yNlYtBpVEenTiZY10MStppK8VZP6vY6l2clQBRuh4oFXjFZ9HVlrXhQgglGgHvVNAhoplwCqCA3khsOQv3RXSm22LK5MvxbYlmpphYnI6VaA5pTyZZ1pbcnVDLKE72ZVa41xSSX6s9gNMmgdemeMemQZVwD9AyQNIjG0yV2Rf3NKAkJvIuRHgOEPFiugtW2oFJXAe%2BrUFnk2kTdl%2BMPl4tUVVFm5MqU2sxTq9NuL4oi0odmk6ebZ4FprdY5qw0DilvZD6kVfrUBsTgH4605MW4D3KUgmKKt7ESSEEGoQqpgGPjWb3ORNtrSqlepmzmbUZXWnLSuuV67dmOq%2Bc1dG2pd3-KFX04FZAeRWFVHw002sWLu2LQqrkw1FX7g1Jw3Q%2BpTZunWamq8iLik7xxlun6B4u2VOphi-dIGO0jwg6TRVatu33S8WgZuiMNzkz-vOo0jpTQRsAfYw0Don7sX1DaFNFaB57iQ%2BBjmqHoOmtPiesRRoz4VJAFhOD2qGOgeQyxi6aGM7saJvVJqXGRks142IXON8lykhAFQRAFBYjVnMDKUACweoQBMDoaQsgQDCGfFIGQcAGSvH4JZ0zJgIBwHrPZ6zIBHPOZmLZ4zVn7DsChORVAkB7KsCYPWcwiBliKmkmJPK0qdxng%2BoeC6UlP4CVOI3Xkis0APpELgMLEWEAADknAuByBAAoAB1CwChWB8AEHOH8g4zxnlSZ3XkRw6pZ0ReyXAVQagAFUEBYFQF4GAVA2DIAAPRTZ4EwMQTArAWCOO5FSEWCC3CgEIYgjhNM8DYEcTgCgpuSmqP4NgU2Yu5WMPVD9vIksVBS8bL%2Bj3TpN2y7lqb6653N2IvQQJHJylwHGg6LkX8bRIxWZqCIA06toAmwhOAUWyDskAWgV7cVuRSJCSXASIMkpCBUAOu00r5nqzhwjkUGxiDqbIEmBQHpcDEUp3AGY4xauoDPJorJ-LmdsERyV5wblKT0DYPNAi9BCT0FaLGaEnx6BwgAgJM7X9oh1a0lQAgAWsjI9QLqe73Isb3YikaBVw1FmBM2oAxGXJK69E0cmpn8P%2BcijYAN%2Bnqg5DpBzKMcQ7uphilwJSOAAAPGYAWXBzZ2AC3AtA4g2TECHqiLWf48mPEcPxfJcninQDwTIRmADy4Wqx4i8VduLt3EtGle7rNLr3MsfaEHlkAu2ysVeq8mVg2w0DQDIJMI49YasAAFVtQR026LXcBDsIFq7YVToxNcwDyFCUvvalQqnVJqDKeoq4mjNBaOAVobR2mdL0Z0dG5H-kDEBEMGwwxNEjNGNocYsgDHp3BCw6ZmxZhzDBHo-RBhiwthSxbgEAKwjMEBtM6xGxMAWw9h%2BAOxhBuxYMcICJSIAIggmBfIMNJY181wNwtw4pdx9xq9jxTxzxLxLxrxbx7xF0zYIF4MkkChvw-xgCAIgxgJQI4IIJ%2BxoIuhYJ4JEIaB4DxAmA0IsgMI%2BNjE6dxcqARwAgiISIyhBAcD%2BlUBmJWJ2JOJuJeJFYBIhIRIxJjQ0BJJpJZJ0UlIPICg1JEw9hdJtJPhdJ9JRgERjJSszIEALJrJbIEB7InIUC3JlJPJvI4BsDL084e02EIpYoiE4oEokptZUpdQgYdQDZEUg1rsCol1ZEkklpKpqplEEEt1WpdotEOUnE-ZxoykVk91ciKoVoSET0V5SjJNU5BYqjJoajwjlNcC2FnpXoTQPoKgvofoqhyZdQAZ7FgZQYxEIYoZsjqk6YGZrRGjWZf4UM3VdE6EvVRYAjFiCEkYVjCj0YOo2YNjyitj2idiu4BUlNAVMM18ZY5ZgE9DlZVYM4NYtYdYpIpFMojYTYL9cjw5I4KjY4eUkZzVWjaFBZ05M5%2BV%2BMTF6M7YHZQS453ZITNiaFnFYTvVuj7jejFRi5S5RF99K5yka40p64rQm4W51124eBO5AT%2B4t4wMaFpM956EUEj581OUF5z5SlL5ajmS-5t42TW194uSoSz4l4BT2pVCb1UAH4gZn5X4pIfpntv42Z-5ZYgEQEwF6CgMK0FE4FjiT0GEKEoTnF6FsEhSljYEKVLEVEyFkFNpKFMTo5KiKYyZ5SsMOEuFBlD8%2BExMuJJpLxhE7QxFopQFclpEFjGDrZjT6krFVFDVtoHF3TnZzp9F7FDEpCql4y7TFFGiUy7F0yLisS9FXFczFMAVhUHi2EfFlR-F-sgkq5Qlv5dRJcX5olYk4B4k4zBNak0lTlNomlslGpWkeT3UmlSlOjeMEScialUl6kiZGlmpxz9koTOkVBZzykfS19BlhlRkko%2BQJk%2BQ4oa5QYdQ5kFklkVleNANl0gT7kxFHkDkXl7E3lyzPkZMfl1p4TpD9i7ltlXyRynlDlPyoSzlMY-yhp9y2FQV1w9RxoW4hlZVgljZHsczEUTYUVIZHcDSnyakGVq1UzikWUiUtyJoeUqUp5bTNldVSLmUY5KKMyW1uVKU%2BV4LVxjYqVhJTQm8ZVFUXEFUlUVV9A1UYlRJ9THzFyw5dUHUzUTVDUDgXUqKPVLVcS8yBNU0FLpy1EjV8U2LUyLUvVrU8S6yCT-VswQFg0zQRlD9tYI199o1wZY141E1BImT5Kq1M061tQG0qKi121O16KsVfLj0s0Arc0gq94QreVuKBkg1B0O1IVR1jxx0AZD8VQTCZ1hB50UpvLNk10N1Iqt0z0j8wrV17ZSqzUtoKqL1bjazr0vE71HRH1koX1Dja49xP1Y1fjf1-0iq7lGNWSONcYxNoMqqhMmMxSJqoN0MLKWq19sNtlDwDZ4p6ZHLiNNYdTyNKNNwDgaNlABzgNRqRN5rZU1YpTOMn0eNprEMxqpNRMFqJNjLpNzk7r5NVDVN6tBAhAmtPx0ccwyBVg0AKwx5hg%2BYCgqo9Bcy48YAE9Q9hAgbswRsQAwaIbVQoanYYaVA4bWBGQWRUaQa%2B0W4jgHZrCAAhVgWIZfM7QcEzOiIAA) computed by Yoni.
 
+This [Code Ocean data asset](https://codeocean.allenneuraldynamics.org/data-assets/97d978ca-f328-49e0-ae6d-3e4544afcf02/lightsheet_template_ccf_registration?filters=N4IgZglgNgLgpgJxALhAQylEAaEBHAV0QE8UR4BbAByjXgFoYB7HEAZyYRjIGME46cACashcNjxQwERXFTQBzOCgCMcxAAVFy5ACYADLjRCAbmgB2PYSmABfXObQUdIKBAUALGGw9w4MAH1KGkEAnh4wAP4FCDZpOggmc1FxPggqGETk1AAROjQAAjBOAuDaBgAjNDZhAoBhOoAxAujY%2BMykgroC3QBWAoIKbAKISygCIVGFAoBlCjQuGY0ASQBZAoAVOGpyuAKTAGYAOhVDeqbhiyFShAs2YoQKNlKPbox3c1LtkPhSpnPGpdzNcGs0LOYmDAEp1Rl8doICmx5FYjgAdZK4KEKNgoADaIHCYBAAF1cABrUYiVBCfI1bi4NgQABeOlOugAHL0AGzsgDsvN0uEgUHEKF6uBpULpOOQuNAECpICEvTAAE40GgwLz6Gh2TxdPQACxaw30VW9MT0FQHODsrloODmh2q1iZGAishzBYwJZrTbfXb7Y6nTb-UEFABKcBicVuHU%2BBEZ5mm83MBAwBVoFTgUGe3T6AwoR391E4C2I%2B0QjKSAG4CgB3aBQArZlpwEJWIRHVgUJgEczcVBIiAUIIB0LMMIRFIi%2BBUsAYGr2eWKg76Cpgdfhehcw1c7WGiqG1U6lT809oFSG3TGsAqMBc10Qd0uL2LFbrAAydQAgiWfnshwnPoIyfBQFADOYz55jABQUAQsDpCKbYcOM8Y4rgvb9oO7DzFww6jlAPBoGO8LwDO-jWMgC65nAy4gAqZC8qqG6qvoBwGr0ERgEa7HsvQFS6BU-HsmgN4LvoqrsnABwVE%2BL5kD%2BmBwJ8qx9jU9RMOBnR1EwnCTI4vyNLczj1pwZIFAAFMsA6II4UAAJQ9n2A5kBgIrmAEWE1FORISjmlHzoudHYCuZD6A%2BPAqKqXI8PQ7EHGgRo8PaOqctqmrcmucC6LoaDcvJHqoG%2BPofgEPK9CoVUBAYugHPFJ4cgEKj8dFVr6AEcTPjwvhCDV%2Bg3vFKhWiozX6FaXJGoaznYZ6eGlWs5WclVo21fVkn0E1LVWiepydW6PXCP1g36MN1WnBNU0UXOKA0UuoUMYqKgVLyxqvRUAkVPo42HvlaVcpNvS8jwhqnIaNKqpuhWvvNvqrOVqqGpVBzHetJ5rgE33xfVLX7d1vXHaap0jWNVq9JtBwza5xWw2VXKI8jqMNfQGNY%2BxVrsnjMCHX1tVE2do0XSo5N1ddVF3SFYWoDwQhgGIPAHPxcBcgIRrslU9DsoaINmnyGpgL05rsrofnkM%2BRUgCVcMBLykkHKqq0Dfz8WcwYRrk2eXM84TQ0k8LassyoVM4VbZW26q9uOydw36K7P0e7yXsE3zvvneThr8QcQf%2BbO4vBfRjGoCq%2BjKsr43mr0BrHuyw26iocUqEIvLspJvJwPX7KU5i5sw961u8qcXJ9D77O6KqpO5Zto1ddzydO9jLMdZP22nMHc192Hg-Dyno-jxdk%2B6NPB1zyd9UY8vrX6GLQW0QXipwAbvJy2gcXMS3au6EImu2%2BN%2Bj08YYBNxwB4PoSQ3cFI0w3otemWcYpMw2k1OqVoDS5STkdHeAsJ4416GvSB75oER2ilyeBjVXY4xQboNBvN57E3OuNJBwtr63Xzg9Qu6BegVCEPTKw9AhA13jilU8d5NZcn0KDNi%2BpeSXmhuvfB8MYHRUTmtZmY9MYe34r0DqM9vYYL9jjQGV9MIuRDrTAhsClEDTRptce%2Bh1H0E0VQkemDrSXU0Uw6iLCpYgGPMIXoHFtRgAOAKI0XCDR634sRHgFpVQcisE-GReCFrwwFN9fcI9TTDxUJNNquhE7aJPkTD2vRmoGiyUaF0RjZqJP7gYP%2BFiToZOKWUnJeTj7oJoUUkpl1jzuIlnfMgqoeBt0NAcGk39toZ2BprK8tcKhcgXOyaSYBDQ9PARbUOi0B7sjYoadJm1E60JPIbRxO8Mmcz-gvU6uDLamOSS1HZezcmYzOkc8e%2BT2kNM2ucya7Mrk50Csw2%2BrDFQChbsJEBmtQEHn5GEoSw1NFcg4mAOqzFkUJJuVA5JN5hZR0KWTZ58V6HEPedQk6HtiFu16PxQ%2B1yNlYtBpVEenTiZY10MStppK8VZP6vY6l2clQBRuh4oFXjFZ9HVlrXhQgglGgHvVNAhoplwCqCA3khsOQv3RXSm22LK5MvxbYlmpphYnI6VaA5pTyZZ1pbcnVDLKE72ZVa41xSSX6s9gNMmgdemeMemQZVwD9AyQNIjG0yV2Rf3NKAkJvIuRHgOEPFiugtW2oFJXAe%2BrUFnk2kTdl%2BMPl4tUVVFm5MqU2sxTq9NuL4oi0odmk6ebZ4FprdY5qw0DilvZD6kVfrUBsTgH4605MW4D3KUgmKKt7ESSEEGoQqpgGPjWb3ORNtrSqlepmzmbUZXWnLSuuV67dmOq%2Bc1dG2pd3-KFX04FZAeRWFVHw002sWLu2LQqrkw1FX7g1Jw3Q%2BpTZunWamq8iLik7xxlun6B4u2VOphi-dIGO0jwg6TRVatu33S8WgZuiMNzkz-vOo0jpTQRsAfYw0Don7sX1DaFNFaB57iQ%2BBjmqHoOmtPiesRRoz4VJAFhOD2qGOgeQyxi6aGM7saJvVJqXGRks142IXON8lykhAFQRAFBYjVnMDKUACweoQBMDoaQsgQDCGfFIGQcAGSvH4JZ0zJgIBwHrPZ6zIBHPOZmLZ4zVn7DsChORVAkB7KsCYPWcwiBliKmkmJPK0qdxng%2BoeC6UlP4CVOI3Xkis0APpELgMLEWEAADknAuByBAAoAB1CwChWB8AEHOH8g4zxnlSZ3XkRw6pZ0ReyXAVQagAFUEBYFQF4GAVA2DIAAPRTZ4EwMQTArAWCOO5FSEWCC3CgEIYgjhNM8DYEcTgCgpuSmqP4NgU2Yu5WMPVD9vIksVBS8bL%2Bj3TpN2y7lqb6653N2IvQQJHJylwHGg6LkX8bRIxWZqCIA06toAmwhOAUWyDskAWgV7cVuRSJCSXASIMkpCBUAOu00r5nqzhwjkUGxiDqbIEmBQHpcDEUp3AGY4xauoDPJorJ-LmdsERyV5wblKT0DYPNAi9BCT0FaLGaEnx6BwgAgJM7X9oh1a0lQAgAWsjI9QLqe73Isb3YikaBVw1FmBM2oAxGXJK69E0cmpn8P%2BcijYAN%2Bnqg5DpBzKMcQ7uphilwJSOAAAPGYAWXBzZ2AC3AtA4g2TECHqiLWf48mPEcPxfJcninQDwTIRmADy4Wqx4i8VduLt3EtGle7rNLr3MsfaEHlkAu2ysVeq8mVg2w0DQDIJMI49YasAAFVtQR026LXcBDsIFq7YVToxNcwDyFCUvvalQqnVJqDKeoq4mjNBaOAVobR2mdL0Z0dG5H-kDEBEMGwwxNEjNGNocYsgDHp3BCw6ZmxZhzDBHo-RBhiwthSxbgEAKwjMEBtM6xGxMAWw9h%2BAOxhBuxYMcICJSIAIggmBfIMNJY181wNwtw4pdx9xq9jxTxzxLxLxrxbx7xF0zYIF4MkkChvw-xgCAIgxgJQI4IIJ%2BxoIuhYJ4JEIaB4DxAmA0IsgMI%2BNjE6dxcqARwAgiISIyhBAcD%2BlUBmJWJ2JOJuJeJFYBIhIRIxJjQ0BJJpJZJ0UlIPICg1JEw9hdJtJPhdJ9JRgERjJSszIEALJrJbIEB7InIUC3JlJPJvI4BsDL084e02EIpYoiE4oEokptZUpdQgYdQDZEUg1rsCol1ZEkklpKpqplEEEt1WpdotEOUnE-ZxoykVk91ciKoVoSET0V5SjJNU5BYqjJoajwjlNcC2FnpXoTQPoKgvofoqhyZdQAZ7FgZQYxEIYoZsjqk6YGZrRGjWZf4UM3VdE6EvVRYAjFiCEkYVjCj0YOo2YNjyitj2idiu4BUlNAVMM18ZY5ZgE9DlZVYM4NYtYdYpIpFMojYTYL9cjw5I4KjY4eUkZzVWjaFBZ05M5%2BV%2BMTF6M7YHZQS453ZITNiaFnFYTvVuj7jejFRi5S5RF99K5yka40p64rQm4W51124eBO5AT%2B4t4wMaFpM956EUEj581OUF5z5SlL5ajmS-5t42TW194uSoSz4l4BT2pVCb1UAH4gZn5X4pIfpntv42Z-5ZYgEQEwF6CgMK0FE4FjiT0GEKEoTnF6FsEhSljYEKVLEVEyFkFNpKFMTo5KiKYyZ5SsMOEuFBlD8%2BExMuJJpLxhE7QxFopQFclpEFjGDrZjT6krFVFDVtoHF3TnZzp9F7FDEpCql4y7TFFGiUy7F0yLisS9FXFczFMAVhUHi2EfFlR-F-sgkq5Qlv5dRJcX5olYk4B4k4zBNak0lTlNomlslGpWkeT3UmlSlOjeMEScialUl6kiZGlmpxz9koTOkVBZzykfS19BlhlRkko%2BQJk%2BQ4oa5QYdQ5kFklkVleNANl0gT7kxFHkDkXl7E3lyzPkZMfl1p4TpD9i7ltlXyRynlDlPyoSzlMY-yhp9y2FQV1w9RxoW4hlZVgljZHsczEUTYUVIZHcDSnyakGVq1UzikWUiUtyJoeUqUp5bTNldVSLmUY5KKMyW1uVKU%2BV4LVxjYqVhJTQm8ZVFUXEFUlUVV9A1UYlRJ9THzFyw5dUHUzUTVDUDgXUqKPVLVcS8yBNU0FLpy1EjV8U2LUyLUvVrU8S6yCT-VswQFg0zQRlD9tYI199o1wZY141E1BImT5Kq1M061tQG0qKi121O16KsVfLj0s0Arc0gq94QreVuKBkg1B0O1IVR1jxx0AZD8VQTCZ1hB50UpvLNk10N1Iqt0z0j8wrV17ZSqzUtoKqL1bjazr0vE71HRH1koX1Dja49xP1Y1fjf1-0iq7lGNWSONcYxNoMqqhMmMxSJqoN0MLKWq19sNtlDwDZ4p6ZHLiNNYdTyNKNNwDgaNlABzgNRqRN5rZU1YpTOMn0eNprEMxqpNRMFqJNjLpNzk7r5NVDVN6tBAhAmtPx0ccwyBVg0AKwx5hg%2BYCgqo9Bcy48YAE9Q9hAgbswRsQAwaIbVQoanYYaVA4bWBGQWRUaQa%2B0W4jgHZrCAAhVgWIZfM7QcEzOiIAA) contains data for computing template-based CCF registration at 25 um, including 
+- `smartspim_lca_template_25.nii.gz`: SmartSPIM Template v3.10, 
+- `ccf_average_template_25.nii.gz`: CCF Allen Atlas, 
+- `spim_template_to_ccf_syn_1Warp.nii.gz` and `spim_template_to_ccf_syn_0GenericAffine.mat`: transforms that align template to CCF,
+- `ccf_annotation_to_template_moved.nii.gz`: CCF annotation warped to template space.
+
+The dimension of SPIM template is `576*648*440`. The dimension of CCF Atlas is `528*320*456`. The resolution of SPIM template and CCF is `0.025*0.025*0.025` mm.
+
+<!-- 
 ## Usage
+
+`main_register_dataset.py` is used to regsiter a stitched testing dataset.
+
 Please attach the data asset (both stitched and unstitched data you would like to run registration, i.e., `SmartSPIM_714635_2024-03-18_10-47-48` and `SmartSPIM_714635_2024-03-18_10-47-48_stitched_2024-03-28_04-43-39`) and update `subject_dir` line 121 in main.py, i.e., `subject_dir="SmartSPIM_714635_2024-03-18_10-47-48"`, then run 
 ```
 conda activate ccf_reg
 python main_register_dataset.py
 ```
+ -->
 
 ## Output directory structure of registration
 After running main.py given one testing dataset, a directory will be created with the following structure
 ```console
-    /path/to/outputs/registration/
-      ├── prep_*.nii.gz
-      ├── prep_*.png
-      ├── moved_rigid.nii.gz
-      ├── moved_ls_to_template.nii.gz
+    /path/to/outputs/   
       ├── moved_ls_to_ccf.nii.gz
-      ├── moved_ccf_anno_to_ls.nii.gz
-      ├── moved_*.png
-      ├── reg_*.png
-      └── ls_to_template_SyN*
-```      
-1. `prep_*.nii.gz`: the intermediate images in preprocessing steps, `prep_*.png` are the corresponding plots.
-2. `moved_rigid.nii.gz`: the preprocessed brain image was aligned to the SPIM template using rigid registration.
-3. `moved_ls_to_template.nii.gz`: the resulting image 2 was aligned to the SPIM template using SyN registration.
-4. `moved_ls_to_ccf.nii.gz`: the resulting image 3 was aligned to the CCF using the template-to-CCF transforms computed by Yoni.
-5. `moved_ccf_anno_to_ls.nii.gz`: the CCF annotation was aligned to the sample space.
-6. `moved_*.png`: visualize the deformed images 2, 3, 4, 5.
-7. `reg_*.png`: visualize the registration results for 2, 3, 4.
-8. `ls_to_template_SyN*`: the transforms that align the preprocessed brain image to the SPIM template.
+      ├── moved_ls_to_ccf.png
+      ├── ls_to_template_SyN_0GenericAffine.mat
+      ├── ls_to_template_SyN_1Warp.nii.gz
+      ├── ls_to_template_SyN_1InverseWarp.nii.gz
+      └── registration_metadata/
+          ├── prep_*.nii.gz
+          ├── prep_*.png
+          ├── moved_rigid.nii.gz
+          ├── moved_ls_to_template.nii.gz
+          ├── moved_ccf_anno_to_ls.nii.gz
+          ├── moved_*.png
+          └── reg_*.png
+```  
+* `/path/to/outputs/` was defined as `ccf_<channel-to-register>`.
+* `moved_ls_to_ccf.nii.gz`: the preprocessed lightsheet volume warped to space of CCF atlas. `moved_ls_to_ccf.png` is the corresponding plot.
+* `ls_to_template_SyN_1Warp.nii.gz` and `ls_to_template_SyN_0GenericAffine.mat`: transforms to move from the lightsheet volume to the SPIM template.
+* `ls_to_template_SyN_0GenericAffine.mat` and `ls_to_template_SyN_1InverseWarp.nii.gz`: transforms to move from the SPIM template to the lightsheet volume.
+* `/path/to/outputs/registration_metadata/`: folder to save derivative images for registration.
+    1. `prep_*.nii.gz`: the intermediate images in preprocessing steps, `prep_*.png` are the corresponding plots.
+    2. `moved_rigid.nii.gz`: the lightsheet volume aligned to space of SPIM template after rigid registration.
+    3. `moved_ls_to_template.nii.gz`: the resulting image from 2 aligned to the SPIM template after SyN registration.
+    4. `moved_ccf_anno_to_ls.nii.gz`: the CCF annotation was aligned to the sample space.
+    5. `moved_*.png`: visualize the deformed images 2, 3, 4.
+    6. `reg_*.png`: visualize the registration results for lightsheet-to-template-to-CCF tasks.
 
-By default, the output file is for the channel-to-register (highest channel) if the file name does not contain the channel info.
-
-
-## Running time
+### Running time
 
 From Camilo's NFS 2024 abstract: 
 ```console
