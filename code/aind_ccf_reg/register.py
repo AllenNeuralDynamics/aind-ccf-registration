@@ -650,8 +650,6 @@ class Register(ArgSchemaParser):
         logger.info(f"Regsitration results save to: {reg_folder}")
 
         create_folder(output_data_path)
-        create_folder(reg_folder)
-        create_folder(metadata_path)
 
         # read input data (lazy loading)
         # flake8: noqa: E501

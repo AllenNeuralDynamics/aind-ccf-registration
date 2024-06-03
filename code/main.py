@@ -150,15 +150,16 @@ def main() -> None:
 
     results_folder = f"../results/ccf_{channel_to_register}"
     create_folder(results_folder)
+    reg_folder = os.path.abspath(f"{results_folder}/registration_metadata")
+    metadata_folder = os.path.abspath(f"{results_folder}/metadata")
+    create_folder(reg_folder)
+    create_folder(metadata_folder)
 
-    logger = create_logger(output_log_path=results_folder)
+    logger = create_logger(output_log_path=reg_folder)
     logger.info(
         f"Processing manifest {pipeline_config} provided in path {processing_manifest_path}"
     )
     logger.info(f"channel_to_register: {channel_to_register}")
-
-    reg_folder = os.path.abspath(f"{results_folder}/registration")
-    metadata_folder = os.path.abspath(f"{results_folder}/metadata")
 
     utils.print_system_information(logger)
 
@@ -183,8 +184,7 @@ def main() -> None:
 
     logger.info(f"{'='*40} SmartSPIM CCF Registration {'='*40}")
 
-    # -------------------------------------------------------------#
-
+    # ---------------------------------------------------#
     # path to SPIM template, CCF and template-to-CCF registration
     template_path = os.path.abspath(
         "../data/lightsheet_template_ccf_registration/smartspim_lca_template_25.nii.gz"
@@ -192,20 +192,47 @@ def main() -> None:
     ccf_reference_path = os.path.abspath(
         "../data/lightsheet_template_ccf_registration/ccf_average_template_25.nii.gz"
     )
+    template_to_ccf_transform_warp_path = os.path.abspath(
+        "../data/lightsheet_template_ccf_registration/spim_template_to_ccf_syn_1Warp.nii.gz"
+    )
+    template_to_ccf_transform_affine_path = os.path.abspath(
+        "../data/lightsheet_template_ccf_registration/spim_template_to_ccf_syn_0GenericAffine.mat"
+    )
     template_to_ccf_transform_path = [
-        os.path.abspath(
-            "../data/lightsheet_template_ccf_registration/spim_template_to_ccf_syn_1Warp.nii.gz"
-        ),
-        os.path.abspath(
-            "../data/lightsheet_template_ccf_registration/spim_template_to_ccf_syn_0GenericAffine.mat"
-        ),
+        template_to_ccf_transform_warp_path,
+        template_to_ccf_transform_affine_path,
     ]
     print(f"template_to_ccf_transform_path: {template_to_ccf_transform_path}")
+
     ccf_annotation_to_template_moved_path = os.path.abspath(
         "../data/lightsheet_template_ccf_registration/ccf_annotation_to_template_moved.nii.gz"
     )
 
-    # -------------------------------------------------------------#
+    if not os.path.isfile(template_path):
+        raise FileNotFoundError(
+            "template_path not exist, please provide valid path to SPIM template"
+        )
+
+    if not os.path.isfile(ccf_reference_path):
+        raise FileNotFoundError(
+            "ccf_reference_path not exist, please provide valid path to CCF atlas"
+        )
+
+    if not os.path.isfile(template_to_ccf_transform_warp_path):
+        raise FileNotFoundError(
+            "template_to_ccf_transform_warp_path not exist, please provide valid path"
+        )
+
+    if not os.path.isfile(template_to_ccf_transform_affine_path):
+        raise FileNotFoundError(
+            "template_to_ccf_transform_affine_path not exist, please provide valid path"
+        )
+
+    if not os.path.isfile(ccf_annotation_to_template_moved_path):
+        raise FileNotFoundError(
+            "ccf_annotation_to_template_moved_path not exist, please provide valid path"
+        )
+    # ---------------------------------------------------#
 
     example_input = {
         "input_data": "../data/fused",
