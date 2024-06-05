@@ -2,6 +2,7 @@
 File for utilities
 """
 
+import json
 import logging
 import multiprocessing
 import os
@@ -18,6 +19,72 @@ import pydantic
 from aind_ccf_reg.configs import PathLike
 from aind_data_schema.core.processing import (DataProcess, PipelineProcess,
                                               Processing)
+
+
+def create_logger(output_log_path: PathLike) -> logging.Logger:
+    """
+    Creates a logger that generates output logs to a specific path.
+
+    Parameters
+    ------------
+    output_log_path: PathLike
+        Path where the log is going to be stored
+
+    Returns
+    -----------
+    logging.Logger
+        Created logger
+        pointing to the file path.
+    """
+    CURR_DATE_TIME = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
+
+    LOGS_FILE = f"{output_log_path}/register_process.log"
+
+    logging.basicConfig(
+        level=logging.DEBUG,
+        format="%(asctime)s - %(levelname)s : %(message)s",
+        datefmt="%Y-%m-%d %H:%M",
+        handlers=[
+            logging.StreamHandler(),
+            logging.FileHandler(LOGS_FILE, "a"),
+        ],
+        force=True,
+    )
+
+    #     logging.disable("DEBUG")
+    logging.disable(logging.DEBUG)
+    logger = logging.getLogger(__name__)
+    logger.setLevel(logging.DEBUG)
+    logger.info(f"Execution datetime: {CURR_DATE_TIME}")
+
+    return logger
+
+
+def read_json_as_dict(filepath: str) -> dict:
+    """
+    Reads a json as dictionary.
+
+    Parameters
+    ------------------------
+
+    filepath: PathLike
+        Path where the json is located.
+
+    Returns
+    ------------------------
+
+    dict:
+        Dictionary with the data the json has.
+
+    """
+
+    dictionary = {}
+
+    if os.path.exists(filepath):
+        with open(filepath) as json_file:
+            dictionary = json.load(json_file)
+
+    return dictionary
 
 
 def create_folder(dest_dir: PathLike, verbose: Optional[bool] = False) -> None:
@@ -43,44 +110,6 @@ def create_folder(dest_dir: PathLike, verbose: Optional[bool] = False) -> None:
         except OSError as e:
             if e.errno != os.errno.EEXIST:
                 raise
-
-
-def create_logger(output_log_path: PathLike) -> logging.Logger:
-    """
-    Creates a logger that generates
-    output logs to a specific path.
-
-    Parameters
-    ------------
-    output_log_path: PathLike
-        Path where the log is going
-        to be stored
-
-    Returns
-    -----------
-    logging.Logger
-        Created logger pointing to
-        the file path.
-    """
-    CURR_DATE_TIME = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
-    LOGS_FILE = f"{output_log_path}/fusion_log_{CURR_DATE_TIME}.log"
-
-    logging.basicConfig(
-        level=logging.DEBUG,
-        format="%(asctime)s - %(levelname)s : %(message)s",
-        datefmt="%Y-%m-%d %H:%M",
-        handlers=[
-            logging.StreamHandler(),
-            logging.FileHandler(LOGS_FILE, "a"),
-        ],
-        force=True,
-    )
-
-    logging.disable("DEBUG")
-    logger = logging.getLogger(__name__)
-    logger.setLevel(logging.DEBUG)
-
-    return logger
 
 
 def read_json_from_pydantic(

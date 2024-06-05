@@ -205,35 +205,36 @@ class Register(ArgSchemaParser):
             figpath name
         """
         # plot moving, fixed, moved, overlaid, difference images in three directions
-        figpath = f"{self.args['reg_folder']}/{figpath_name}"
-        logger.info(f"Plot registration results: {figpath}")
+        if figpath_name:
+            figpath = f"{self.args['reg_folder']}/{figpath_name}"
+            logger.info(f"Plot registration results: {figpath}")
 
-        if np.any(ants_moving.direction != ants_fixed.direction):
-            logger.info(
-                f"Reorient moving image direction to fixed image direction ..."
-            )
-            ants_moving = ants.reorient_image2(
-                ants_moving, orientation=ants.get_orientation(ants_fixed)
-            )
-            logger.info(f"Reoriented moving image -- {ants_moving}")
+            if np.any(ants_moving.direction != ants_fixed.direction):
+                logger.info(
+                    f"Reorient moving image direction to fixed image direction ..."
+                )
+                ants_moving = ants.reorient_image2(
+                    ants_moving, orientation=ants.get_orientation(ants_fixed)
+                )
+                logger.info(f"Reoriented moving image -- {ants_moving}")
 
-        for loc in [0, 1, 2]:
-            plot_args = (
-                ants_moving,
-                ants_fixed,
-                ants_moved,
-                f"{figpath}_{loc}",
-            )
-            plot_kwargs = {
-                "title": figpath_name,
-                "loc": loc,
-                "vmin": VMIN,
-                "vmax": VMAX,
-            }
+            for loc in [0, 1, 2]:
+                plot_args = (
+                    ants_moving,
+                    ants_fixed,
+                    ants_moved,
+                    f"{figpath}_{loc}",
+                )
+                plot_kwargs = {
+                    "title": figpath_name,
+                    "loc": loc,
+                    "vmin": VMIN,
+                    "vmax": VMAX,
+                }
+                plot_reg(*plot_args, **plot_kwargs)
 
-            plot_reg(*plot_args, **plot_kwargs)
-
-        self._plot_write_antsimg(ants_moved, moved_path)
+        if moved_path:
+            self._plot_write_antsimg(ants_moved, moved_path)
 
     def register_to_template(self, ants_fixed, ants_moving):
         """
@@ -287,7 +288,7 @@ class Register(ArgSchemaParser):
             ants_moving,
             ants_fixed,
             ants_moved,
-            moved_path=self.args["ants_params"]["rigid_path"],
+            moved_path=self.args["ants_params"].get("rigid_path"),
             figpath_name=reg_task,
         )
 
@@ -334,7 +335,7 @@ class Register(ArgSchemaParser):
             ants_moving,
             ants_fixed,
             ants_moved,
-            moved_path=self.args["ants_params"]["moved_to_template_path"],
+            moved_path=self.args["ants_params"].get("moved_to_template_path"),
             figpath_name=reg_task,
         )
 
@@ -381,7 +382,7 @@ class Register(ArgSchemaParser):
             ants_moving,
             ants_fixed,
             ants_moved,
-            moved_path=self.args["ants_params"]["moved_to_ccf_path"],
+            moved_path=self.args["ants_params"].get("moved_to_ccf_path"),
             figpath_name=reg_task,
         )
 

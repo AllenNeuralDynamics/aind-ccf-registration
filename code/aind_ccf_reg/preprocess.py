@@ -37,6 +37,7 @@ def perc_normalization(
     """
     percentiles = [lower_perc, upper_perc]
     percentile_values = np.percentile(ants_img.view(), percentiles)
+    assert percentile_values[1] > percentile_values[0]
     ants_img = (ants_img - percentile_values[0]) / (
         percentile_values[1] - percentile_values[0]
     )

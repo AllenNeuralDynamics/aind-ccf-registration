@@ -3,7 +3,6 @@ Main used in code ocean to execute capsule
 """
 
 import glob
-import json
 import logging
 import multiprocessing
 import os
@@ -12,106 +11,8 @@ from datetime import datetime
 
 from aind_ccf_reg import register, utils
 from aind_ccf_reg.configs import PathLike
-from aind_ccf_reg.utils import create_folder
+from aind_ccf_reg.utils import create_folder, create_logger, read_json_as_dict
 from natsort import natsorted
-
-
-def create_logger(output_log_path: PathLike) -> logging.Logger:
-    """
-    Creates a logger that generates output logs to a specific path.
-
-    Parameters
-    ------------
-    output_log_path: PathLike
-        Path where the log is going to be stored
-
-    Returns
-    -----------
-    logging.Logger
-        Created logger
-        pointing to the file path.
-    """
-    CURR_DATE_TIME = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
-
-    LOGS_FILE = f"{output_log_path}/register_process.log"
-
-    logging.basicConfig(
-        level=logging.DEBUG,
-        format="%(asctime)s - %(levelname)s : %(message)s",
-        datefmt="%Y-%m-%d %H:%M",
-        handlers=[
-            logging.StreamHandler(),
-            logging.FileHandler(LOGS_FILE, "a"),
-        ],
-        force=True,
-    )
-
-    #     logging.disable("DEBUG")
-    logging.disable(logging.DEBUG)
-    logger = logging.getLogger(__name__)
-    logger.setLevel(logging.DEBUG)
-    logger.info(f"Execution datetime: {CURR_DATE_TIME}")
-
-    return logger
-
-
-def read_json_as_dict(filepath: str) -> dict:
-    """
-    Reads a json as dictionary.
-
-    Parameters
-    ------------------------
-
-    filepath: PathLike
-        Path where the json is located.
-
-    Returns
-    ------------------------
-
-    dict:
-        Dictionary with the data the json has.
-
-    """
-
-    dictionary = {}
-
-    if os.path.exists(filepath):
-        with open(filepath) as json_file:
-            dictionary = json.load(json_file)
-
-    return dictionary
-
-
-def execute_command_helper(command: str, print_command: bool = False) -> None:
-    """
-    Execute a shell command.
-
-    Parameters
-    ------------------------
-    command: str
-        Command that we want to execute.
-    print_command: bool
-        Bool that dictates if we print the command in the console.
-
-    Raises
-    ------------------------
-    CalledProcessError:
-        if the command could not be executed (Returned non-zero status).
-
-    """
-
-    if print_command:
-        print(command)
-
-    popen = subprocess.Popen(
-        command, stdout=subprocess.PIPE, universal_newlines=True, shell=True
-    )
-    for stdout_line in iter(popen.stdout.readline, ""):
-        yield str(stdout_line).strip()
-    popen.stdout.close()
-    return_code = popen.wait()
-    if return_code:
-        raise subprocess.CalledProcessError(return_code, command)
 
 
 def main() -> None:

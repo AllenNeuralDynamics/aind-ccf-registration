@@ -6,7 +6,7 @@ specify schema format for Preprocess and Registration.
 from pathlib import Path
 from typing import Union
 
-import dask
+import dask.array as da
 import numpy as np
 from argschema import ArgSchema
 from argschema.fields import Dict as sch_dict
@@ -15,7 +15,7 @@ from argschema.fields import List as sch_list
 from argschema.fields import Str
 
 PathLike = Union[str, Path]
-ArrayLike = Union[dask.array.core.Array, np.ndarray]
+ArrayLike = Union[da.core.Array, np.ndarray]
 
 VMIN = 0
 VMAX = 1.5
