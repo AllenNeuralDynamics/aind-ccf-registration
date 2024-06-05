@@ -38,7 +38,6 @@ class CCFRegistrationTest(unittest.TestCase):
 
     def test_ccf_registration(self):
         """Tests CCF registration of an image."""
-        from aind_ccf_reg.register import Register
         from aind_ccf_reg.utils import create_folder
         from sklearn.metrics import f1_score
 
@@ -79,16 +78,6 @@ class CCFRegistrationTest(unittest.TestCase):
         )
         assert os.path.isfile(input_data_path)
 
-        example_input = {
-            "bucket_path": "aind-open-data",
-            "template_path": template_path,  # SPIM template
-            "ccf_reference_path": ccf_reference_path,
-            "template_to_ccf_transform_path": template_to_ccf_transform_path,
-            "results_folder": results_folder,
-            "reg_folder": reg_folder,
-            "ants_params": {},
-        }
-
         ants_img = ants.image_read(os.path.abspath(input_data_path))  #
         ants_template = ants.image_read(
             os.path.abspath(template_path)
@@ -116,6 +105,7 @@ class CCFRegistrationTest(unittest.TestCase):
         )
         print(f"** f1_value: {f1_value} **")
         self.assertTrue(f1_value > 0.70)
+
 
 if __name__ == "__main__":
     unittest.main()
