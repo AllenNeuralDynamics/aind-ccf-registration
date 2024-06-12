@@ -19,8 +19,25 @@ def main() -> None:
     """
     Main function to register a dataset
     """
-    data_folder = os.path.abspath("../data/")
-    processing_manifest_path = f"{data_folder}/processing_manifest.json"
+    subject_dir = "SmartSPIM_714635_2024-03-18_10-47-48"
+    subject_dir = "SmartSPIM_725271_2024-05-22_17-24-06"
+    subject_dir = "SmartSPIM_725379_2024-04-25_17-02-42"
+    subject_dir = "SmartSPIM_685111_2023-09-28_18-19-10"
+
+    input_data = glob.glob(
+        f"../data/{subject_dir}*_stitched_*/image_tile_fusing/OMEZarr/"
+    )
+    if input_data is None:
+        raise ValueError(
+            "Please attach the stitched data asset for registration!"
+        )
+
+    input_data = input_data[0]
+
+    data_folder = os.path.abspath(f"../data/{subject_dir}/")
+    processing_manifest_path = (
+        f"{data_folder}/derivatives/processing_manifest.json"
+    )
     acquisition_path = f"{data_folder}/acquisition.json"
 
     if not os.path.exists(processing_manifest_path):
@@ -49,8 +66,10 @@ def main() -> None:
     # Getting highest wavelenght as default for registration
     channel_to_register = sorted_channels[-1]
 
-    results_folder = f"../results/ccf_{channel_to_register}"
+    subject_id = subject_dir.split("_")[1]
+    results_folder = f"../results/{subject_id}_ccf_{channel_to_register}_run1"
     create_folder(results_folder)
+
     reg_folder = os.path.abspath(f"{results_folder}/registration_metadata")
     metadata_folder = os.path.abspath(f"{results_folder}/metadata")
     create_folder(reg_folder)
@@ -136,7 +155,8 @@ def main() -> None:
     # ---------------------------------------------------#
 
     example_input = {
-        "input_data": "../data/fused",
+        #         "input_data": "../data/fused", # TODO
+        "input_data": input_data,
         "input_channel": channel_to_register,
         "input_scale": pipeline_config["registration"]["input_scale"],
         "input_orientation": acquisition_orientation,
@@ -159,7 +179,7 @@ def main() -> None:
             "mask_figpath": f"{reg_folder}/prep_mask.jpg",
             "mask_path": f"{reg_folder}/prep_mask.nii.gz",
             "n4bias_figpath": f"{reg_folder}/prep_n4bias.jpg",
-            "n4bias_path": f"{reg_folder}/prep_n4bias.nii.gz",
+            # "n4bias_path": f"{reg_folder}/prep_n4bias.nii.gz",
             # "img_diff_n4bias_figpath": f"{reg_folder}/prep_img_diff_n4bias.jpg",
             # "img_diff_n4bias_path": f"{reg_folder}/prep_img_diff_n4bias.nii.gz",
             "percNorm_figpath": f"{reg_folder}/prep_percNorm.jpg",
