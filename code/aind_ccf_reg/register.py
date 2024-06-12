@@ -629,7 +629,7 @@ class Register(ArgSchemaParser):
                 dask_jobs = dask.persist(*dask_jobs)
                 wait(dask_jobs)
 
-        client.close()
+        client.shutdown()
 
     def run(self) -> str:
         """
@@ -723,7 +723,7 @@ class Register(ArgSchemaParser):
                 code_url="https://github.com/ANTsX/ANTs",
                 code_version=ants.__version__,
                 parameters=ants_params,
-                notes="Registering image data to Allen CCF Atlas",
+                notes="Template based registration: LS -> template -> Allen CCFv3 Atlas",
             )
         )
 

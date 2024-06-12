@@ -2,15 +2,10 @@
 Main used in code ocean to execute capsule
 """
 
-import glob
-import logging
 import multiprocessing
 import os
-import subprocess
-from datetime import datetime
 
 from aind_ccf_reg import register, utils
-from aind_ccf_reg.configs import PathLike
 from aind_ccf_reg.utils import create_folder, create_logger, read_json_as_dict
 from natsort import natsorted
 
@@ -51,8 +46,8 @@ def main() -> None:
 
     results_folder = f"../results/ccf_{channel_to_register}"
     create_folder(results_folder)
-    reg_folder = os.path.abspath(f"{results_folder}/registration_metadata")
     metadata_folder = os.path.abspath(f"{results_folder}/metadata")
+    reg_folder = os.path.abspath(f"{metadata_folder}/registration_metadata")
     create_folder(reg_folder)
     create_folder(metadata_folder)
 
@@ -168,11 +163,6 @@ def main() -> None:
         "ants_params": {
             "spacing": (0.0144, 0.0144, 0.016),
             "unit": "millimetre",
-            # "ccf_orientations": {
-            #     "anterior_to_posterior": 0,
-            #     "superior_to_inferior": 1,
-            #     "left_to_right": 2,
-            # },
             "template_orientations": {
                 "anterior_to_posterior": 1,
                 "superior_to_inferior": 2,
@@ -193,6 +183,8 @@ def main() -> None:
     logger.info(f"Input parameters in CCF run: {example_input}")
     # flake8: noqa: F841
     image_path = register.main(example_input)
+
+    logger.info(f"Saving outputs to: {image_path}")
 
     # Getting tracked resources and plotting image
     utils.stop_child_process(profile_process)

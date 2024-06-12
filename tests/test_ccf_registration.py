@@ -14,10 +14,8 @@ class CCFRegistrationTest(unittest.TestCase):
     def test_preprocessing(self):
         """Tests preprocessing functions"""
 
-        from aind_ccf_reg.preprocess import (
-            perc_normalization,
-            write_and_plot_image,
-        )
+        from aind_ccf_reg.preprocess import (perc_normalization,
+                                             write_and_plot_image)
 
         # test percentile normalization
         img = np.random.rand(3, 3, 3)
