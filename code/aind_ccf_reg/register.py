@@ -265,7 +265,7 @@ class Register(ArgSchemaParser):
             "fixed": ants_fixed,
             "moving": ants_moving,
             "type_of_transform": "Rigid",
-            "outprefix": f"{self.args['reg_folder']}/ls_to_template_rigid_",
+            "outprefix": f"{self.args['results_folder']}/ls_to_template_rigid_",
             "mask_all_stages": True,
             "grad_step": 0.25,
             "reg_iterations": (60, 40, 20, 0),
