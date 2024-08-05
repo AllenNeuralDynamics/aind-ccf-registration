@@ -39,8 +39,8 @@ blosc.use_threads = False
 
 from aind_ccf_reg.configs import VMAX, VMIN, ArrayLike, PathLike, RegSchema
 from aind_ccf_reg.plots import plot_antsimgs, plot_reg
-from aind_ccf_reg.preprocess import (Preprocess, perc_normalization,
-                                     write_and_plot_image)
+from aind_ccf_reg.preprocess import (Preprocess, invert_perc_normalization,
+                                     perc_normalization, write_and_plot_image)
 from aind_ccf_reg.utils import (check_orientation, create_folder,
                                 generate_processing)
 
@@ -363,7 +363,7 @@ class Register(ArgSchemaParser):
         )
 
         # for visualizing registration results
-        ants_fixed = perc_normalization(ants_fixed)
+        ants_fixed, percentile_values = perc_normalization(ants_fixed)
 
         start_time = datetime.now()
         ants_moved = ants.apply_transforms(
@@ -390,7 +390,7 @@ class Register(ArgSchemaParser):
 
     def atlas_alignment(
         self, img_array: np.array, ants_params: dict
-    ) -> np.array:
+    ) -> Tuple[np.array, List]:
         """
         Register an lightsheet volume to the CCF Allen atlas via the SPIM template
 
@@ -407,6 +407,12 @@ class Register(ArgSchemaParser):
 
         ants_params: dict
             Dictionary with ants parameters
+
+        Returns
+        -------
+        Tuple
+            np.array: Aligned image
+            List: List with the percentile values
         """
         # ----------------------------------#
         # load SPIM template + CCF
@@ -427,6 +433,7 @@ class Register(ArgSchemaParser):
         # ----------------------------------#
 
         img_array = img_array.astype(np.double)
+        logger.info(f"Image array DR: {img_array.min()} - {img_array.max()}")
         img_out, in_mat, out_mat = check_orientation(
             img_array,
             self.args["input_orientation"],
@@ -460,8 +467,9 @@ class Register(ArgSchemaParser):
         logger.info(f"{'=='*40}")
 
         prep = Preprocess(self.args, ants_img, ants_template)
-        ants_img = prep.run()
+        ants_img, percentile_values = prep.run()
         logger.info(f"Preprocessed input data {ants_img}")
+        logger.info(f"percentile values: {percentile_values}")
 
         # ----------------------------------#
         # register brain image to template
@@ -519,7 +527,7 @@ class Register(ArgSchemaParser):
             vmax=None,
         )
 
-        return aligned_image.numpy()
+        return aligned_image.numpy(), percentile_values
 
     def write_zarr(
         self,
@@ -708,7 +716,13 @@ class Register(ArgSchemaParser):
             self.args["reference_res"],
         )
 
-        aligned_image = self.atlas_alignment(img_array, ants_params)
+        aligned_image, percentile_values = self.atlas_alignment(
+            img_array, ants_params
+        )
+        no_norm_aligned_image = invert_perc_normalization(
+            aligned_image, percentile_values
+        )
+
         end_date_time = datetime.now()
 
         data_processes.append(
@@ -738,7 +752,26 @@ class Register(ArgSchemaParser):
             )
         }
 
-        aligned_image_dask = da.from_array(aligned_image)
+        aligned_image_dask = da.from_array(no_norm_aligned_image)
+        print(
+            "Before changing orientation: ",
+            aligned_image_dask.shape,
+            " DR: ",
+            no_norm_aligned_image.min(),
+            no_norm_aligned_image.max(),
+        )
+        aligned_image_dask = da.moveaxis(
+            aligned_image_dask, [0, 1, 2], [2, 1, 0]
+        )
+        print(
+            "After changing orientation: ",
+            aligned_image_dask.shape,
+            " DR: ",
+            no_norm_aligned_image.min(),
+            no_norm_aligned_image.max(),
+            aligned_image_dask.dtype,
+            no_norm_aligned_image.dtype,
+        )
 
         self.write_zarr(
             img_array=aligned_image_dask,  # dask array

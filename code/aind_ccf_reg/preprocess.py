@@ -21,6 +21,24 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
+def invert_perc_normalization(ants_img, percentile_values):
+    """
+    Inverse of the percentile normalization
+
+    Parameters
+    ----------
+    ants_img: ANTsImage
+        Normalized image
+
+    Returns
+    -------
+    ANTsImage
+    """
+    p0, p1 = percentile_values[0], percentile_values[1]
+    new_img = (ants_img * (p1 - p0)) + p0
+    return new_img
+
+
 def perc_normalization(
     ants_img, lower_perc: float = 2, upper_perc: float = 98
 ):
@@ -38,11 +56,14 @@ def perc_normalization(
     percentiles = [lower_perc, upper_perc]
     percentile_values = np.percentile(ants_img.view(), percentiles)
     assert percentile_values[1] > percentile_values[0]
+
+    ants_img = np.maximum(ants_img, percentile_values[0])
+
     ants_img = (ants_img - percentile_values[0]) / (
         percentile_values[1] - percentile_values[0]
     )
 
-    return ants_img
+    return ants_img, percentile_values
 
 
 def write_and_plot_image(
@@ -285,7 +306,7 @@ class Preprocess:
         """compute percential normalization"""
         logger.info("Start intensity normalization")
         start_time = datetime.now()
-        ants_img = perc_normalization(ants_img)
+        ants_img, percentile_values = perc_normalization(ants_img)
         end_time = datetime.now()
         logger.info(
             f"Intensity normalization complete, execution time:\
@@ -300,7 +321,7 @@ class Preprocess:
             vmax=VMAX,
         )
 
-        return ants_img
+        return ants_img, percentile_values
 
     def run(self) -> str:
         """
@@ -312,7 +333,11 @@ class Preprocess:
         ants_img_mask = self.compute_mask(ants_img)
         ants_img = ants_img * ants_img_mask
         ants_img = self.compute_N4(ants_img, mask=ants_img_mask)
-        ants_img = self.intensity_norm(ants_img)
+        vmin, vmax = np.min(ants_img.view()), np.max(ants_img.view())
+
+        logger.info(f"Min max values: {vmin} {vmax}")
+
+        ants_img, percentile_values = self.intensity_norm(ants_img)
 
         end_date_time = datetime.now()
         logger.info(
@@ -320,7 +345,7 @@ class Preprocess:
             {end_date_time - start_date_time} s"
         )
 
-        return ants_img
+        return ants_img, percentile_values
 
 
 def main(input_config: dict):
