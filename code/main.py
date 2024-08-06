@@ -14,9 +14,11 @@ def main() -> None:
     """
     Main function to register a dataset
     """
-    data_folder = os.path.abspath("../data/")
-    processing_manifest_path = f"{data_folder}/processing_manifest.json"
-    acquisition_path = f"{data_folder}/acquisition.json"
+    data_folder = os.path.abspath("../data")
+    processing_manifest_path = f"{data_folder}/SmartSPIM_742629_2024-08-01_00-48-42/derivatives/processing_manifest.json"
+    acquisition_path = (
+        f"{data_folder}/SmartSPIM_742629_2024-08-01_00-48-42/acquisition.json"
+    )
 
     if not os.path.exists(processing_manifest_path):
         raise ValueError("Processing manifest path does not exist!")
@@ -131,7 +133,7 @@ def main() -> None:
     # ---------------------------------------------------#
 
     example_input = {
-        "input_data": "../data/fused",
+        "input_data": f"{data_folder}/SmartSPIM_742629_2024-08-01_00-48-42_stitched_2024-08-05_11-14-37/image_tile_fusing/OMEZarr",  # "../data/fused",
         "input_channel": channel_to_register,
         "input_scale": pipeline_config["registration"]["input_scale"],
         "input_orientation": acquisition_orientation,
