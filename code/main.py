@@ -15,9 +15,9 @@ def main() -> None:
     Main function to register a dataset
     """
     data_folder = os.path.abspath("../data")
-    processing_manifest_path = f"{data_folder}/SmartSPIM_742629_2024-08-01_00-48-42/derivatives/processing_manifest.json"
+    processing_manifest_path = f"{data_folder}/processing_manifest.json"
     acquisition_path = (
-        f"{data_folder}/SmartSPIM_742629_2024-08-01_00-48-42/acquisition.json"
+        f"{data_folder}/acquisition.json"
     )
 
     if not os.path.exists(processing_manifest_path):
