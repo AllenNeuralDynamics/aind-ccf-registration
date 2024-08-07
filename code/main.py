@@ -133,7 +133,7 @@ def main() -> None:
     # ---------------------------------------------------#
 
     example_input = {
-        "input_data": f"{data_folder}/SmartSPIM_742629_2024-08-01_00-48-42_stitched_2024-08-05_11-14-37/image_tile_fusing/OMEZarr",  # "../data/fused",
+        "input_data": "../data/fused", #f"{data_folder}/SmartSPIM_742629_2024-08-01_00-48-42_stitched_2024-08-05_11-14-37/image_tile_fusing/OMEZarr"
         "input_channel": channel_to_register,
         "input_scale": pipeline_config["registration"]["input_scale"],
         "input_orientation": acquisition_orientation,
