@@ -663,7 +663,7 @@ class Register(ArgSchemaParser):
         # read input data (lazy loading)
         # flake8: noqa: E501
         image_path = Path(input_data_path).joinpath(
-            f"{self.args['input_channel']}.zarr/{self.args['input_scale']}"
+            f"{self.args['input_channel']}.ome.zarr/{self.args['input_scale']}"
         )
         logger.info(f"Going to read zarr: {image_path}")
 
