@@ -784,7 +784,7 @@ class Register(ArgSchemaParser):
 
         data_processes.append(
             DataProcess(
-                name=ProcessName.FILE_CONVERSION,
+                name=ProcessName.FILE_FORMAT_CONVERSION,
                 software_version=__version__,
                 start_date_time=start_date_time,
                 end_date_time=end_date_time,
@@ -811,7 +811,7 @@ class Register(ArgSchemaParser):
             data_processes=data_processes,
             dest_processing=metadata_path,
             processor_full_name="Di Wang, Camilo Laiton",
-            pipeline_version="1.5.0",
+            pipeline_version="1.6.0",
         )
 
         return str(image_path)
