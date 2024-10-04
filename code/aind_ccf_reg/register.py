@@ -236,7 +236,12 @@ class Register(ArgSchemaParser):
         if moved_path:
             self._plot_write_antsimg(ants_moved, moved_path)
 
-    def register_to_template(self, ants_fixed, ants_moving):
+    def register_to_template(
+        self,
+        ants_fixed,
+        ants_moving,
+        moving_mask=None,
+    ):
         """
         Run SyN regsitration to align brain image to SPIM template
 
@@ -246,6 +251,8 @@ class Register(ArgSchemaParser):
             fixed image
         ants_moving: ANTsImage
             moving image
+        moving_mask: ANTsImage
+            Moving mask
 
         Returns
         -----------
@@ -264,12 +271,22 @@ class Register(ArgSchemaParser):
         registration_params = {
             "fixed": ants_fixed,
             "moving": ants_moving,
+            "moving_mask": moving_mask,
             "type_of_transform": "Rigid",
             "outprefix": f"{self.args['results_folder']}/ls_to_template_rigid_",
             "mask_all_stages": True,
             "grad_step": 0.25,
-            "reg_iterations": (60, 40, 20, 0),
+            "reg_iterations": [
+                0,
+                0,
+                0,
+                0,
+            ],  # Explicitly avoiding deformable reg
+            "reg_iterations": [60, 30, 15, 5],
             "aff_metric": "mattes",
+            "verbose": True,  # Setting to true for future debugging
+            "flow_sigma": 3.0,
+            "total_sigma": 0.0,
         }
 
         logger.info(
@@ -293,13 +310,54 @@ class Register(ArgSchemaParser):
         )
 
         # ----------------------------------#
+        # Affine registration
+        # ----------------------------------#
+        logger.info(f"Start computing affine registration ....")
+
+        start_time = datetime.now()
+        affine_registration_params = {
+            "fixed": ants_fixed,
+            "moving": ants_moving,  # The moving image after rigid registration
+            "moving_mask": moving_mask,
+            "initial_transform": [
+                f"{self.args['results_folder']}/ls_to_template_rigid_0GenericAffine.mat"
+            ],
+            "outprefix": f"{self.args['results_folder']}/ls_to_template_affine_",
+            "type_of_transform": "Affine",
+            "reg_iterations": [0, 0, 0, 0],
+            "aff_iterations": [60, 30, 15, 5],
+            "aff_metric": "mattes",  # CC metric?
+            "verbose": True,
+            "mask_all_stages": True,
+        }
+        logger.info(
+            f"Computing affine registration with parameters: {affine_registration_params}"
+        )
+        affine_reg = ants.registration(**affine_registration_params)
+
+        end_time = datetime.now()
+        logger.info(
+            f"Affine registration Complete, execution time: {end_time - start_time} s -- image {affine_reg}"
+        )
+        ants_moved = affine_reg["warpedmovout"]
+
+        reg_task = "reg_affine"
+        self._qc_reg(
+            ants_moving,
+            ants_fixed,
+            ants_moved,
+            moved_path=self.args["ants_params"].get("affine_path"),
+            figpath_name=reg_task,
+        )
+
+        # ----------------------------------#
         # SyN registration
         # ----------------------------------#
 
         logger.info(f"Start registering to template ....")
 
         if self.args["reference_res"] == 25:
-            reg_iterations = [200, 20, 0]
+            reg_iterations = [200, 100, 25, 3]
         elif self.args["reference_res"] == 10:
             reg_iterations = [400, 200, 40, 0]
         else:
@@ -311,12 +369,16 @@ class Register(ArgSchemaParser):
         registration_params = {
             "fixed": ants_fixed,
             "moving": ants_moving,
-            # "initial_transform": [f"{self.args['reg_folder']}/ls_to_template_rigid_0GenericAffine.mat"],
-            "initial_transform": rigid_reg["fwdtransforms"][0],
+            "moving_mask": moving_mask,
+            "reg_iterations": reg_iterations,
+            "initial_transform": [
+                f"{self.args['results_folder']}/ls_to_template_affine_0GenericAffine.mat"
+            ],
+            "mask_all_stages": True,
             "syn_metric": "CC",
             "syn_sampling": 2,
-            "reg_iterations": reg_iterations,
             "outprefix": f"{self.args['results_folder']}/ls_to_template_SyN_",
+            "verbose": True,
         }
 
         logger.info(
