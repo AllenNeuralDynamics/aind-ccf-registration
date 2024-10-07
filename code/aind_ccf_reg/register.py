@@ -322,7 +322,7 @@ class Register(ArgSchemaParser):
             "type_of_transform": "Affine",
             "reg_iterations": [0, 0, 0, 0],
             "aff_iterations": [60, 30, 15, 5],
-            "aff_metric": "mattes",  # CC metric?
+            "aff_metric": "mattes",
             "verbose": True,
             "mask_all_stages": True,
         }
@@ -538,7 +538,7 @@ class Register(ArgSchemaParser):
 
         # ants_img = ants.image_read(self.args["prep_params"].get("percNorm_path")) #
 
-        # register to SPIM template: rigid + SyN
+        # register to SPIM template: rigid + affine + SyN
         aligned_image = self.register_to_template(ants_template, ants_img)
 
         # ----------------------------------#
