@@ -1,12 +1,11 @@
 """Tests CCF registration."""
 
-import os
 import unittest
 
 import ants
 import numpy as np
 from aind_ccf_reg.preprocess import Masking
-from pathlib import Path
+
 
 class CCFRegistrationTest(unittest.TestCase):
     """Tests CCF registration."""
