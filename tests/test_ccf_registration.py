@@ -1,8 +1,6 @@
 """Tests CCF registration."""
 
-import os
 import unittest
-from pathlib import Path
 
 import ants
 import numpy as np

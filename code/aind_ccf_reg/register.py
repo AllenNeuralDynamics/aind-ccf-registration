@@ -11,9 +11,7 @@ Pipeline:
 import logging
 import multiprocessing
 import os
-import shutil
 from datetime import datetime
-from glob import glob
 from pathlib import Path
 from typing import Dict, Hashable, List, Sequence, Tuple, Union
 
@@ -21,7 +19,6 @@ import ants
 import dask
 import dask.array as da
 import numpy as np
-import tifffile
 import xarray_multiscale
 import zarr
 from aicsimageio.types import PhysicalPixelSizes
@@ -31,7 +28,6 @@ from argschema import ArgSchemaParser
 from dask.distributed import Client, LocalCluster, performance_report
 from distributed import wait
 from numcodecs import blosc
-from skimage import io
 
 from .__init__ import __version__
 
