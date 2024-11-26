@@ -2,7 +2,6 @@
 File for utilities
 """
 
-import boto3
 import json
 import logging
 import multiprocessing
@@ -135,45 +134,6 @@ def read_json_from_pydantic(
     json_data = pydantic.parse_file_as(path=path, type_=pydantic_class)
 
     return json_data
-
-def get_ccf(
-    out_path: str,
-    bucket_name: Optional[str] = "tissuecyte-visualizations",
-    s3_folder: Optional[str] = "data/221205/ccf_annotations/",
-):
-    """
-    Parameters
-    ----------
-    out_path : str
-        path to where the precomputed segmentation map will be stored
-    bucket_name: Optional[str]
-        Bucket name where the precomputed annotation is stored for the
-        CCF
-    s3_folder: Optional[str]
-        Path inside of the bucket where the annotations are stored
-
-    """
-
-    # location of the data from tissueCyte, but can get our own and change to aind-open-data
-
-    s3_resource = boto3.resource("s3")
-    bucket = s3_resource.Bucket(bucket_name)
-
-    for obj in bucket.objects.filter(Prefix=s3_folder):
-        target = os.path.join(out_path, os.path.relpath(obj.key, s3_folder))
-
-        # dont currently need 10um data so we should skip
-        if "10000_10000_10000" in obj.key:
-            continue
-
-        if not os.path.exists(os.path.dirname(target)):
-            os.makedirs(os.path.dirname(target))
-
-        # dont try and download folders
-        if obj.key[-1] == "/":
-            continue
-
-        bucket.download_file(obj.key, target)
 
 def generate_neuroglancer_link(
     ng_params: dict,
