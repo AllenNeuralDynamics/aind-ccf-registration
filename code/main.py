@@ -43,6 +43,16 @@ def main() -> None:
 
     # Getting highest wavelenght as default for registration
     channel_to_register = sorted_channels[-1]
+    
+    # getting additional channels for registration
+    ex_wavelengths = pipeline_config["channel_translation"]["excitation"]
+    em_wavelengths = pipeline_config["channel_translation"]["emmission"]
+    additional_channels = []
+    
+    for ex, em in zip(ex_wavelengths, em_wavelengths):
+        channel = f"Ex_{ex}_Em_{em}"
+        if channel != channel_to_register:
+            additional_channels.append(f"Ex_{ex}_Em_{em}")
 
     results_folder = f"../results/ccf_{channel_to_register}"
     create_folder(results_folder)
@@ -99,7 +109,18 @@ def main() -> None:
         template_to_ccf_transform_affine_path,
     ]
     print(f"template_to_ccf_transform_path: {template_to_ccf_transform_path}")
+    
+    ccf_to_template_transform_warp_path = os.path.abspath(
+        "../data/lightsheet_template_ccf_registration/_syn_1InverseWarp.nii.gz"
+    )
 
+    ccf_to_template_transform_path = [
+        template_to_ccf_transform_affine_path,
+        ccf_to_template_transform_warp_path,
+    ]
+    
+    print(f"ccf_to_template_transform_path: {ccf_to_template_transform_path}")
+    
     ccf_annotation_to_template_moved_path = os.path.abspath(
         "../data/lightsheet_template_ccf_registration/ccf_annotation_to_template_moved.nii.gz"
     )
@@ -133,12 +154,14 @@ def main() -> None:
     example_input = {
         "input_data": "../data/fused",
         "input_channel": channel_to_register,
+        "additional_channels": additional_channels,
         "input_scale": pipeline_config["registration"]["input_scale"],
         "input_orientation": acquisition_orientation,
         "bucket_path": "aind-open-data",
         "template_path": template_path,  # SPIM template
         "ccf_reference_path": ccf_reference_path,
         "template_to_ccf_transform_path": template_to_ccf_transform_path,
+        "ccf_to_template_transform_path": ccf_to_template_transform_path,
         "ccf_annotation_to_template_moved_path": ccf_annotation_to_template_moved_path,
         "reference_res": 25,
         "output_data": os.path.abspath(f"{results_folder}/OMEZarr"),
@@ -146,6 +169,7 @@ def main() -> None:
         "code_url": "https://github.com/AllenNeuralDynamics/aind-ccf-registration",
         "results_folder": results_folder,
         "reg_folder": reg_folder,
+        "stitched_s3_path": pipeline_config['stitching']["s3_path"],
         "prep_params": {
             "rawdata_figpath": f"{reg_folder}/prep_zarr_img.jpg",
             "rawdata_path": f"{reg_folder}/prep_zarr_img.nii.gz",
@@ -161,7 +185,7 @@ def main() -> None:
             "percNorm_path": f"{reg_folder}/prep_percNorm.nii.gz",
         },
         "ants_params": {
-            "spacing": (0.0144, 0.0144, 0.016),
+            "spacing": (0.016, 0.0144, 0.0144),
             "unit": "millimetre",
             "template_orientations": {
                 "anterior_to_posterior": 1,

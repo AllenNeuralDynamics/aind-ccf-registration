@@ -2,6 +2,7 @@
 File for utilities
 """
 
+import boto3
 import json
 import logging
 import multiprocessing
@@ -135,6 +136,139 @@ def read_json_from_pydantic(
 
     return json_data
 
+def get_ccf(
+    out_path: str,
+    bucket_name: Optional[str] = "tissuecyte-visualizations",
+    s3_folder: Optional[str] = "data/221205/ccf_annotations/",
+):
+    """
+    Parameters
+    ----------
+    out_path : str
+        path to where the precomputed segmentation map will be stored
+    bucket_name: Optional[str]
+        Bucket name where the precomputed annotation is stored for the
+        CCF
+    s3_folder: Optional[str]
+        Path inside of the bucket where the annotations are stored
+
+    """
+
+    # location of the data from tissueCyte, but can get our own and change to aind-open-data
+
+    s3_resource = boto3.resource("s3")
+    bucket = s3_resource.Bucket(bucket_name)
+
+    for obj in bucket.objects.filter(Prefix=s3_folder):
+        target = os.path.join(out_path, os.path.relpath(obj.key, s3_folder))
+
+        # dont currently need 10um data so we should skip
+        if "10000_10000_10000" in obj.key:
+            continue
+
+        if not os.path.exists(os.path.dirname(target)):
+            os.makedirs(os.path.dirname(target))
+
+        # dont try and download folders
+        if obj.key[-1] == "/":
+            continue
+
+        bucket.download_file(obj.key, target)
+
+def generate_neuroglancer_link(
+    ng_params: dict,
+    logger: logging.Logger,
+):
+    """
+    Creates and saves neuroglancer link for ccf registered layers
+
+    Parameters
+    ----------
+    ng_params : dict
+        parameterizations from capsules
+    logger : logging.Logger
+        logging object
+
+    Returns
+    -------
+    None.
+
+    """
+    
+    visuals_path = "../results/visualization"
+    create_folder(visuals_path)
+    
+    process_output_filename = "image_atlas_alignment/visualization/neuroglancer_config.json"
+    dataset_path = ng_params["stitched_s3_path"]
+    
+    # create channel layers
+    layers = []
+    for c, channel in enumerate(ng_params['additional_channels']):
+        layers.append(
+            {
+                "source": f"zarr://{dataset_path}/image_atlas_alignment/{channel}/OMEZarr/image.zarr",
+                "type": "image",
+                "channel": c,
+                "shaderControls": {"normalized": {"range": [0, 500]}},  # Optional
+                "name": f"{channel}_25_um",
+            }
+        )
+    
+    # add CCF template layer
+    layers.append(
+        {
+            "source": ng_params['ccf_OMEZarr_path'],
+            "type": "image",
+            "channel": c,
+            "shaderControls": {"normalized": {"range": [0, 500]}},  # Optional
+            "name": "CCF_template",
+        }
+    )
+    
+    # add annotation map layer
+    get_ccf(visuals_path)
+    
+    # currently using 25um resolution so need to drop 10um data or NG finicky
+    with open(os.path.join(visuals_path, "info"), "r") as f:
+        info_file = json.load(f)
+
+    info_file["scales"].pop(0)
+
+    with open(os.path.join(visuals_path, "info"), "w") as f:
+        json.dump(info_file, f, indent=2)
+        
+    layers.append(
+        {
+            "type": "segmentation",
+            "source": f"precomputed://{dataset_path}/image_atlass_alignment/visualization/ccf_annotation_precomputed",
+            "tab": "source",
+            "name": "CCF_annotations",
+        },
+        
+    )
+    
+    # neuroglancer link visualization
+    
+    ng_link = f"https://aind-neuroglancer-sauujisjxq-uw.a.run.app#!{dataset_path}/{process_output_filename}"
+    
+    input_configs = {
+        "ng_link": ng_link,
+        "dimensions": {
+        # check the order
+            "z": {"voxel_size": ng_params['reference_res'], "unit": "microns"},
+            "y": {"voxel_size": ng_params['reference_res'], "unit": "microns"},
+            "x": {"voxel_size": ng_params['reference_res'], "unit": "microns"},
+            "t": {"voxel_size": 0.001, "unit": "seconds"},
+        },
+        "layers": layers
+    }
+    
+    logger.info(f"Neuroglancer link: {input_configs['ng_link']}")
+
+    with open(
+        f"{visuals_path}/neuroglancer_config.json", "w"
+    ) as outfile:
+        json.dump(input_configs, outfile, indent=2)
 
 def generate_processing(
     data_processes: List[DataProcess],
@@ -179,6 +313,39 @@ def generate_processing(
 
     processing.write_standard_file(output_directory=dest_processing)
 
+def rotate_image(img: np.array, in_mat: np.array):
+    """
+    Rotates axes of a volume based on orientation matrix
+    
+    Parameters
+    ----------
+    img: np.array
+        Image volume to be rotated
+    in_mat: np.array
+        3x3 matrix with cols indicating order of input array and rows
+        indicating location to rotate axes into
+        
+    Returns
+    -------
+    img_out: np.array
+        Image after being rotated into new orientation
+    out_mat: np.array
+        axes correspondance after rotating array. Should always be an
+        identity matrix
+    
+    """
+    
+    original, swapped = np.where(in_mat)
+    img_out = np.moveaxis(img, original, swapped)
+
+    out_mat = in_mat[:, swapped]
+    for c, row in enumerate(in_mat.T):
+        val = np.where(row)[0][0]
+        if row[val] == -1:
+            img_out = np.flip(img_out, c)
+            out_mat[val, val] *= -1
+            
+    return img_out, out_mat
 
 def check_orientation(img: np.array, params: dict, orientations: dict):
     """
@@ -191,7 +358,7 @@ def check_orientation(img: np.array, params: dict, orientations: dict):
     Parameters
     ----------
     img : np.array
-        The raw image in its aquired orientatin
+        The raw image in its aquired orientation
     params : dict
         The orientation information from processing_manifest.json
     orientations: dict
@@ -224,15 +391,7 @@ def check_orientation(img: np.array, params: dict, orientations: dict):
     if "".join(acronym) == "spl":
         orient_mat = abs(orient_mat)
 
-    original, swapped = np.where(orient_mat)
-    img_out = np.moveaxis(img, original, swapped)
-
-    out_mat = orient_mat[:, swapped]
-    for c, row in enumerate(orient_mat.T):
-        val = np.where(row)[0][0]
-        if row[val] == -1:
-            img_out = np.flip(img_out, c)
-            out_mat[val, val] *= -1
+    img_out, out_mat = rotate_image(img, orient_mat)
 
     return img_out, orient_mat, out_mat
 
