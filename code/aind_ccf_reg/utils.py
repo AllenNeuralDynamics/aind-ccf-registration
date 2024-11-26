@@ -135,6 +135,43 @@ def read_json_from_pydantic(
 
     return json_data
 
+def get_channel_translations(
+        translation_params: dict,
+        channel_to_register: str,
+) -> list:
+    """
+    Identifies all the imaging channels in a dataset
+
+    Parameters
+    ----------
+    translation_params: dict
+        list of channels from processing manifest
+    channel_to_register: str
+        channel that is being used for registration
+
+    Returns
+    -------
+    list
+        list of channels formated: Ex_*_Em_*
+
+    """
+    
+    additional_channels = []
+    if "excitation" in translation_params.keys():
+        ex_wavelengths = translation_params["excitation"]
+        em_wavelengths = translation_params["emmission"]
+        
+        for ex, em in zip(ex_wavelengths, em_wavelengths):
+            channel = f"Ex_{ex}_Em_{em}"
+            if channel != channel_to_register:
+                additional_channels.append(f"Ex_{ex}_Em_{em}")
+    else:
+        for key, channel in translation_params.items():
+            if channel != channel_to_register:
+                additional_channels.append(channel)
+            
+    return additional_channels
+        
 def generate_neuroglancer_link(
     ng_params: dict,
     logger: logging.Logger,

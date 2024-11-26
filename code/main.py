@@ -6,7 +6,8 @@ import multiprocessing
 import os
 
 from aind_ccf_reg import register, utils
-from aind_ccf_reg.utils import create_folder, create_logger, read_json_as_dict
+from aind_ccf_reg.utils import (create_folder, create_logger, read_json_as_dict,
+                                get_channel_translations)
 from natsort import natsorted
 
 
@@ -45,14 +46,10 @@ def main() -> None:
     channel_to_register = sorted_channels[-1]
     
     # getting additional channels for registration
-    ex_wavelengths = pipeline_config["channel_translation"]["excitation"]
-    em_wavelengths = pipeline_config["channel_translation"]["emmission"]
-    additional_channels = []
-    
-    for ex, em in zip(ex_wavelengths, em_wavelengths):
-        channel = f"Ex_{ex}_Em_{em}"
-        if channel != channel_to_register:
-            additional_channels.append(f"Ex_{ex}_Em_{em}")
+    additional_channels = get_channel_translations(
+        pipeline_config["channel_translation"], 
+        channel_to_register
+    )
 
     results_folder = f"../results/ccf_{channel_to_register}"
     create_folder(results_folder)
