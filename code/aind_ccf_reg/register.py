@@ -1053,6 +1053,9 @@ class Register(ArgSchemaParser):
         
         #reverse transform ccf onto raw downsampled image
         start_date_time = datetime.now()
+
+        output_data_path = os.path.abspath(f"../results/ccf_reverse/OMEZarr")
+        create_folder(output_data_path)
         
         aligned_image, spacing = self.reverse_atlas_alignment(img_array, ants_params)
         
