@@ -167,7 +167,6 @@ def main() -> None:
         "code_url": "https://github.com/AllenNeuralDynamics/aind-ccf-registration",
         "results_folder": results_folder,
         "reg_folder": reg_folder,
-        "stitched_s3_path": pipeline_config['stitching']["s3_path"],
         "prep_params": {
             "rawdata_figpath": f"{reg_folder}/prep_zarr_img.jpg",
             "rawdata_path": f"{reg_folder}/prep_zarr_img.nii.gz",
