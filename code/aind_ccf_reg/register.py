@@ -515,7 +515,7 @@ class Register(ArgSchemaParser):
         ants_img.set_direction(ants_template.direction)
         ants_img.set_origin(ants_template.origin)
 
-        print(f" Input image info: {ant_img}")
+        logger.info(f"Input image info: {ants_img}")
 
         write_and_plot_image(
             ants_img,
