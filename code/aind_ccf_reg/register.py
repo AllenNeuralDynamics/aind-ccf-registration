@@ -511,9 +511,11 @@ class Register(ArgSchemaParser):
             [ants_params['spacing'][s] for s in spacing_order]    
         )
 
-        ants_img = ants.from_numpy(img_out, img_spacing)
+        ants_img = ants.from_numpy(img_out, spacing = img_spacing)
         ants_img.set_direction(ants_template.direction)
         ants_img.set_origin(ants_template.origin)
+
+        print(f" Input image info: {ant_img}")
 
         write_and_plot_image(
             ants_img,
