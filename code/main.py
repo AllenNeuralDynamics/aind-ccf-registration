@@ -109,7 +109,7 @@ def main() -> None:
     print(f"template_to_ccf_transform_path: {template_to_ccf_transform_path}")
     
     ccf_to_template_transform_warp_path = os.path.abspath(
-        "../data/lightsheet_template_ccf_registration/_syn_1InverseWarp.nii.gz"
+        "../data/lightsheet_template_ccf_registration/syn_1InverseWarp.nii.gz"
     )
 
     ccf_to_template_transform_path = [
