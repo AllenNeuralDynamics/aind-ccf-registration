@@ -159,7 +159,6 @@ def main() -> None:
         "bucket_path": "aind-open-data",
         "template_path": template_path,  # SPIM template
         "ccf_reference_path": ccf_reference_path,
-        "cc
         "template_to_ccf_transform_path": template_to_ccf_transform_path,
         "ccf_to_template_transform_path": ccf_to_template_transform_path,
         "ccf_annotation_to_template_moved_path": ccf_annotation_to_template_moved_path,
