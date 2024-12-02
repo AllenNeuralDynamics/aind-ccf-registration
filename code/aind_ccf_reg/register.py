@@ -644,7 +644,7 @@ class Register(ArgSchemaParser):
         aligned_image = ants.apply_transforms(
             fixed=ants_template,
             moving=ants_ccf,
-            transformlist=ants_params['ccf_to_template_transform_path'],
+            transformlist=self.args['ccf_to_template_transform_path'],
             whichtoinvert=[True, False]
         )
         
