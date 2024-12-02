@@ -742,11 +742,16 @@ class Register(ArgSchemaParser):
             self.args["input_orientation"],
             ants_params["template_orientations"],
         )
+
+        img_out = img_out.astype(np.double)
+        ants_img = ants.from_numpy(img_out, spacing=ants_params["spacing"])
+        ants_img.set_direction(ants_annotation.direction)
+        ants_img.set_origin(ants_annotation.origin) 
         
         # apply transform
         aligned_image = ants.apply_transforms(
             fixed=ants_img,
-            moving=aligned_image,
+            moving=ants_annotation,
             transformlist=template_to_brain_transform_path,
             interpolator = 'genericLabel',
             whichtoinvert=[True, False]
