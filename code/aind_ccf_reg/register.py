@@ -693,7 +693,79 @@ class Register(ArgSchemaParser):
         )
         
         return aligned_image.numpy(), visual_spacing
-    
+
+    def reverse_annotation_alignment(
+        self,
+        img_array: np.array,
+        ants_params:dict,
+    ):
+        """
+        Reverse transforms CCF annotation volume into raw LS space
+        using the transfroms from the original registration
+
+        Parameters
+        ----------
+        img_array : np.array
+            Array with the image
+        ants_params: dict
+            Parameters for registering image
+
+        Returns
+        -------
+        None.
+
+        """
+
+        # ----------------------------------#
+        # load SPIM template + CCF
+        # ----------------------------------#        
+
+        logger.info("Reading annotation image")
+        ants_annotation = ants.image_read(
+            os.path.abspath(self.args["ccf_annotation_to_template_moved_path"])
+        )
+
+        # ----------------------------------#
+        # register CCF in template space to brain space
+        # ----------------------------------#
+        logger.info(f"{'=='*40}")
+        logger.info("Start registering CCF from template to brain space....")
+        logger.info(f"{'=='*40}")
+
+        template_to_brain_transform_path = [
+            f"{self.args['results_folder']}/ls_to_template_SyN_0GenericAffine.mat",
+            f"{self.args['results_folder']}/ls_to_template_SyN_1InverseWarp.nii.gz",
+        ]
+
+        img_out, in_mat, out_mat = check_orientation(
+            img_array,
+            self.args["input_orientation"],
+            ants_params["template_orientations"],
+        )
+        
+        # apply transform
+        aligned_image = ants.apply_transforms(
+            fixed=ants_img,
+            moving=aligned_image,
+            transformlist=template_to_brain_transform_path,
+            interpolator = 'genericLabel',
+            whichtoinvert=[True, False]
+        )
+        
+        aligned_image_array = aligned_image.numpy()
+
+        aligned_image_out, _ = rotate_image(
+            aligned_image_array,
+            in_mat,
+        )
+        
+        spacing_order = np.where(in_mat)[1]
+        visual_spacing = tuple(
+            [ants_params['spacing'][i] * 1000 for i in spacing_order]
+        )
+        
+        return aligned_image.numpy(), visual_spacing
+
     def additional_channal_alignment(
         self, 
         img_array: np.array,
@@ -756,7 +828,6 @@ class Register(ArgSchemaParser):
         # ----------------------------------#
         # register image to ccf
         # ----------------------------------#
-        
         
         ls_to_template_transform_path = [
             f"{self.args['results_folder']}/ls_to_template_SyN_1Warp.nii.gz",
@@ -1109,7 +1180,58 @@ class Register(ArgSchemaParser):
             )
         )
         
+        #reverse transform annotation map
+        output_data_path = os.path.abspath(f"../results/ccf_annotation_reverse/OMEZarr")
+        create_folder(output_data_path)
+
+        aligned_image, spacing = self.reverse_annotation_alignment(img_array, ants_params)
         
+        end_date_time = datetime.now()
+        
+        data_processes.append(
+            DataProcess(
+                name=ProcessName.IMAGE_ATLAS_ALIGNMENT,
+                software_version=__version__,
+                start_date_time=start_date_time,
+                end_date_time=end_date_time,
+                input_location=str(image_path),
+                output_location="In memory array",
+                outputs={},
+                code_url="https://github.com/ANTsX/ANTs",
+                code_version=ants.__version__,
+                parameters=ants_params,
+                notes="Template based reversed registration: annotations in template space -> LS",
+            )
+        )
+        
+        self.write_zarr(
+            img_array=aligned_image_dask,  # dask array
+            physical_pixel_sizes=spacing,
+            output_path=output_data_path,
+            image_name=image_name,
+            opts=opts,
+        )
+        
+        data_processes.append(
+            DataProcess(
+                name=ProcessName.FILE_FORMAT_CONVERSION,
+                software_version=__version__,
+                start_date_time=start_date_time,
+                end_date_time=end_date_time,
+                input_location="In memory array",
+                output_location=str(
+                    Path(output_data_path).joinpath(image_name)
+                ),
+                outputs={},
+                code_url=self.args["code_url"],
+                code_version=__version__,
+                parameters={
+                    "pixel_sizes": spacing,
+                    "OMEZarr_params": self.args["OMEZarr_params"],
+                },
+                notes="Converting registered image to OMEZarr",
+            )
+        )
         
         #registers segmented channels to CCF
         for channel in self.args['additional_channels']:
@@ -1206,7 +1328,7 @@ class Register(ArgSchemaParser):
                 )
             )
         
-        #generate_neuroglancer_link(self.args, logger)
+        generate_neuroglancer_link(self.args, logger)
         
         processing_path = Path(metadata_path).joinpath("processing.json")
 

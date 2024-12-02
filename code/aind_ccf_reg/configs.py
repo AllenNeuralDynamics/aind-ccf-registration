@@ -84,7 +84,7 @@ class RegSchema(ArgSchema):
     ccf_annotation_to_template_moved_path = Str(
         metadata={
             "required": True,
-            "description": "Path to CCF annotation in SPIM template space",
+            "description": "Path to CCF annotation in LS template space",
         }
     )
 
