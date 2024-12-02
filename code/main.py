@@ -26,7 +26,7 @@ def main() -> None:
         raise ValueError("Acquisition path does not exist!")
 
     pipeline_config = read_json_as_dict(processing_manifest_path)
-    channel_translations = pipeline_config.get("channel_translation")
+    #channel_translations = pipeline_config.get("channel_translation")
     pipeline_config = pipeline_config.get("pipeline_processing")
 
     if pipeline_config is None:
@@ -47,10 +47,11 @@ def main() -> None:
     channel_to_register = sorted_channels[-1]
     
     # getting additional channels for registration
-    additional_channels = get_channel_translations(
-        channel_translations, 
-        channel_to_register
-    )
+    #additional_channels = get_channel_translations(
+    #    channel_translations, 
+    #    channel_to_register
+    #)
+    additional_channels = pipeline_config['segmenation']['channels']
 
     results_folder = f"../results/ccf_{channel_to_register}"
     create_folder(results_folder)
