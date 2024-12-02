@@ -667,6 +667,7 @@ class Register(ArgSchemaParser):
             ants_params["template_orientations"],
         )
         
+        img_out = img_out.astype(np.double)
         ants_img = ants.from_numpy(img_out, spacing=ants_params["spacing"])
         ants_img.set_direction(ants_template.direction)
         ants_img.set_origin(ants_template.origin) 
