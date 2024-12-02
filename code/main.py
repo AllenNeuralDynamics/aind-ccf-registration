@@ -51,7 +51,7 @@ def main() -> None:
     #    channel_translations, 
     #    channel_to_register
     #)
-    additional_channels = pipeline_config['segmenation']['channels']
+    additional_channels = pipeline_config['segmentation']['channels']
 
     results_folder = f"../results/ccf_{channel_to_register}"
     create_folder(results_folder)
