@@ -672,7 +672,7 @@ class Register(ArgSchemaParser):
         )
 
         img_out = img_out.astype(np.double)
-        ants_img = ants.from_numpy(img_out, spacing=image_spacing)
+        ants_img = ants.from_numpy(img_out, spacing=img_spacing)
         ants_img.set_direction(ants_template.direction)
         ants_img.set_origin(ants_template.origin) 
         
