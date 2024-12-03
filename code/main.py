@@ -212,6 +212,7 @@ def main() -> None:
                 "chunk_size": [16, 16, 16],
                 "factors": [2, 2, 2],
                 "num_scales": 4
+            }
         }
     }
 
