@@ -1333,8 +1333,6 @@ class Register(ArgSchemaParser):
                 )
             )
         
-        generate_neuroglancer_link(self.args, logger)
-        
         processing_path = Path(metadata_path).joinpath("processing.json")
 
         logger.info(f"Writing processing: {processing_path}")
