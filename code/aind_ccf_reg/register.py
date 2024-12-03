@@ -38,8 +38,7 @@ from aind_ccf_reg.plots import plot_antsimgs, plot_reg
 from aind_ccf_reg.preprocess import (Preprocess, invert_perc_normalization,
                                      perc_normalization, write_and_plot_image)
 from aind_ccf_reg.utils import (check_orientation, create_folder,
-                                generate_processing, generate_neuroglancer_link,
-                                rotate_image)
+                                generate_processing, rotate_image)
 
 LOG_FMT = "%(asctime)s %(message)s"
 LOG_DATE_FMT = "%Y-%m-%d %H:%M"
