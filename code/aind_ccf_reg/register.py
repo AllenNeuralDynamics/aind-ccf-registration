@@ -666,8 +666,13 @@ class Register(ArgSchemaParser):
             ants_params["template_orientations"],
         )
         
+        spacing_order = np.where(in_mat)[1]
+        img_spacing = tuple(
+            [ants_params['spacing'][s] for s in spacing_order]    
+        )
+
         img_out = img_out.astype(np.double)
-        ants_img = ants.from_numpy(img_out, spacing=ants_params["spacing"])
+        ants_img = ants.from_numpy(img_out, spacing=image_spacing)
         ants_img.set_direction(ants_template.direction)
         ants_img.set_origin(ants_template.origin) 
         
@@ -691,7 +696,7 @@ class Register(ArgSchemaParser):
             [ants_params['spacing'][i] * 1000 for i in spacing_order]
         )
         
-        return aligned_image.numpy(), visual_spacing
+        return aligned_image_out, visual_spacing
 
     def reverse_annotation_alignment(
         self,
@@ -742,8 +747,12 @@ class Register(ArgSchemaParser):
             ants_params["template_orientations"],
         )
 
+        img_spacing = tuple(
+            [ants_params['spacing'][s] for s in spacing_order]    
+        )
+
         img_out = img_out.astype(np.double)
-        ants_img = ants.from_numpy(img_out, spacing=ants_params["spacing"])
+        ants_img = ants.from_numpy(img_out, spacing=img_spacing)
         ants_img.set_direction(ants_annotation.direction)
         ants_img.set_origin(ants_annotation.origin) 
         
@@ -768,7 +777,7 @@ class Register(ArgSchemaParser):
             [ants_params['spacing'][i] * 1000 for i in spacing_order]
         )
         
-        return aligned_image.numpy(), visual_spacing
+        return aligned_image_out, visual_spacing
 
     def additional_channal_alignment(
         self, 
@@ -825,7 +834,11 @@ class Register(ArgSchemaParser):
             f"Output image dimensions: {img_out.shape} \nOutput image orientation: {out_mat}"
         )
 
-        ants_img = ants.from_numpy(img_out, spacing=ants_params["spacing"])
+        img_spacing = tuple(
+            [ants_params['spacing'][s] for s in spacing_order]    
+        )
+
+        ants_img = ants.from_numpy(img_out, spacing=img_spacing)
         ants_img.set_direction(ants_template.direction)
         ants_img.set_origin(ants_template.origin)
         
@@ -1155,6 +1168,8 @@ class Register(ArgSchemaParser):
             )
         )
         
+        aligned_image_dask = da.from_array(aligned_image)
+
         self.write_zarr(
             img_array=aligned_image_dask,  # dask array
             physical_pixel_sizes=spacing,
@@ -1207,6 +1222,8 @@ class Register(ArgSchemaParser):
                 notes="Template based reversed registration: annotations in template space -> LS",
             )
         )
+
+        aligned_image_dask = da.from_array(aligned_image)
         
         self.write_zarr(
             img_array=aligned_image_dask,  # dask array
