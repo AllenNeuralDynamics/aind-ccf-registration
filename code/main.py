@@ -45,12 +45,6 @@ def main() -> None:
 
     # Getting highest wavelenght as default for registration
     channel_to_register = sorted_channels[-1]
-    
-    # getting additional channels for registration
-    #additional_channels = get_channel_translations(
-    #    channel_translations, 
-    #    channel_to_register
-    #)
     additional_channels = pipeline_config['segmentation']['channels']
 
     results_folder = f"../results/ccf_{channel_to_register}"
@@ -148,6 +142,13 @@ def main() -> None:
         raise FileNotFoundError(
             "ccf_annotation_to_template_moved_path not exist, please provide valid path"
         )
+
+    # ---------------------------------------------------#
+
+    regions = read_json_as_dict('../code/aind_ccf_reg/ccf_files/annotation_map.json')
+    precompute_path = os.abspath('../results/annotation_precomputed')
+    create_folder(precompute_path)
+
     # ---------------------------------------------------#
 
     example_input = {
@@ -201,6 +202,16 @@ def main() -> None:
             "compressor": "zstd",
             "chunks": (64, 64, 64),
         },
+        "ng_params":{
+            "save_path": "file://" + precompute_path,
+            "regions": regions
+            "scale_params": {
+                "encoding": "compresso",
+                "compressed_block": [8, 8, 8],
+                "chunk_size": [16, 16, 16],
+                "factors": [2, 2, 2],
+                "num_scales": 4
+        }
     }
 
     logger.info(f"Input parameters in CCF run: {example_input}")

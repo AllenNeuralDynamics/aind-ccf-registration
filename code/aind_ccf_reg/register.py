@@ -777,8 +777,10 @@ class Register(ArgSchemaParser):
         visual_spacing = tuple(
             [ants_params['spacing'][i] * 1000 for i in spacing_order]
         )
+
+        self.ng_params['scale_params']['res'] = visual_spacing
         
-        return aligned_image_out, visual_spacing
+        return aligned_image_out
 
     def additional_channal_alignment(
         self, 

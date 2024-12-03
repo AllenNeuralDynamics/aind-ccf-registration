@@ -297,6 +297,140 @@ def check_orientation(img: np.array, params: dict, orientations: dict):
 
     return img_out, orient_mat, out_mat
 
+class create_precomputed():
+
+    def __init__(self, ng_params):
+        self.regions = ng_params['regions']
+        self.scaling = ng_params['scale_params']
+        self.save_path = ng_params['save_path']
+
+    def create_segmentation_info(self):
+        """
+        Builds formating for additional info file for segmentation
+        precomuted defining the segmentation regions from CCFv3
+
+        Returns
+        -------
+        json_file: dict
+            region information formatted for saving as info file for 
+            segmentation precomputed
+        """
+    
+        json_file = {
+            "@type": "neuroglancer_segment_properties",
+            "inline": {
+                "ids": [str(k) for k in self.regions.keys()],
+                "properties": [
+                    {
+                        "id": "label",
+                        "type": "label",
+                        "values": [str(v) for k, v in  self.regions.items()]
+                    }
+                ]
+            }
+        }
+
+        return json_file
+
+
+    def build_scales(self):
+        """
+        Creates the scaling information for segmentation precomputed
+        info file
+
+        Return
+        ------
+        scales: dict
+            The resolution scales of the segmentation precomputed
+            pyramid
+        """
+    
+        scales = []
+        for s in range(self.scaling['num_scales']):
+            scale = {
+                "chunk_sizes": [self.scaling['chunk_size']],
+                "encoding": self.scaling['encoding'],
+                "compressed_segmentation_block_size": self.scaling['compressed_block'],
+                "key": "_".join(
+                    [str(r * f**s) for r, f in zip(self.scaling['res'], self.scaling['factors'])]
+                ),
+                "resolution": [
+                    int(r * f**s) for r, f in zip(self.scaling['res'], self.scaling['factors'])
+                ],
+                "size": [
+                    int(d // f**s) for d, f in zip(self.scaling['dims'], self.scaling['factors'])
+                ]                                     
+            }
+        scales.append(scale)
+    
+        return scales
+
+    def build_precomputed_info(self):
+        """
+        builds info dictionary for segmentation precomputed info file
+
+        Returns
+        -------
+        info: dict
+            information dictionary for creating info file
+
+        """
+        info = {
+            "type": "segmentation",
+            "segment_properties": "segment_properties",
+            "data_type": "uint32",
+            "num_channels": 1,
+            "scales": build_scales(self.scaling)
+        }
+    
+        return info
+
+    def volume_info(self, scale: int):
+        """
+        Builds information for each scale of precomputed parymid
+
+        Returns
+        -------
+        info: Cloudvolume Object
+            All the scaling information for an individual level
+        """
+    
+        info = CloudVolume.create_new_info(
+            num_channels = 1, 
+            layer_type = 'segmentation', 
+            data_type = 'uint32',
+            encoding = self.scaling['encoding'],
+            resolution = [int(r * f**scale) for r, f in zip(self.scaling['res'], self.scaling['factors'])],
+            voxel_offset = [0, 0, 0],
+            chunk_size = self.scaling['chunk_size'],
+            volume_size = [int(d // f**scale) for d, f in zip(self.scaling['dims'], self.scaling['factors'])]
+        )
+    
+        return info
+    
+    def save_segment_precomputed(self, img: np.array):
+        """
+        Creates segmentation precomputed pyramid and saves files
+
+        Parameters
+        ----------
+        img: np.array
+            The image that is being converted to a precomputed format
+        """
+    
+        for scale in range(self.scaling['num_scales']):
+        
+            if scale == 0:
+                curr_img = img
+            else:
+                factor = [1 / 2**scale for d in img.shape]
+                curr_img = ndi.zoom(img, tuple(factor), order = 0)
+        
+            info = volume_info(self.scaling, scale)
+            vol = CloudVolume(self.save_path, info=info, compress = 'br')
+            vol[:, :, :] = curr_img.astype('uint32')
+        
+        return
 
 def profile_resources(
     time_points: List,
