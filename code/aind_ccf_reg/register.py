@@ -747,6 +747,7 @@ class Register(ArgSchemaParser):
             ants_params["template_orientations"],
         )
 
+        spacing_order = np.where(in_mat)[1]
         img_spacing = tuple(
             [ants_params['spacing'][s] for s in spacing_order]    
         )
@@ -834,6 +835,7 @@ class Register(ArgSchemaParser):
             f"Output image dimensions: {img_out.shape} \nOutput image orientation: {out_mat}"
         )
 
+        spacing_order = np.where(in_mat)[1]
         img_spacing = tuple(
             [ants_params['spacing'][s] for s in spacing_order]    
         )
