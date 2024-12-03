@@ -148,6 +148,7 @@ def main() -> None:
     regions = read_json_as_dict('../code/aind_ccf_reg/ccf_files/annotation_map.json')
     precompute_path = os.abspath('../results/annotation_precomputed')
     create_folder(precompute_path)
+    create_folder(f"{precompute_path}/segment_properties")
 
     # ---------------------------------------------------#
 
@@ -204,7 +205,7 @@ def main() -> None:
         },
         "ng_params":{
             "save_path": "file://" + precompute_path,
-            "regions": regions
+            "regions": regions,
             "scale_params": {
                 "encoding": "compresso",
                 "compressed_block": [8, 8, 8],

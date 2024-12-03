@@ -38,7 +38,8 @@ from aind_ccf_reg.plots import plot_antsimgs, plot_reg
 from aind_ccf_reg.preprocess import (Preprocess, invert_perc_normalization,
                                      perc_normalization, write_and_plot_image)
 from aind_ccf_reg.utils import (check_orientation, create_folder,
-                                generate_processing, rotate_image)
+                                generate_processing, rotate_image, 
+                                create_precomputed)
 
 LOG_FMT = "%(asctime)s %(message)s"
 LOG_DATE_FMT = "%Y-%m-%d %H:%M"
@@ -701,7 +702,8 @@ class Register(ArgSchemaParser):
     def reverse_annotation_alignment(
         self,
         img_array: np.array,
-        ants_params:dict,
+        ants_params: dict,
+        ng_params: dict,
     ):
         """
         Reverse transforms CCF annotation volume into raw LS space
@@ -713,6 +715,8 @@ class Register(ArgSchemaParser):
             Array with the image
         ants_params: dict
             Parameters for registering image
+        ng_params: dict
+            Parameters for creating segmentation precompute
 
         Returns
         -------
@@ -775,12 +779,18 @@ class Register(ArgSchemaParser):
         
         spacing_order = np.where(in_mat)[1]
         visual_spacing = tuple(
-            [ants_params['spacing'][i] * 1000 for i in spacing_order]
+            [ants_params['spacing'][i] * 10**6 for i in spacing_order]
         )
 
-        self.ng_params['scale_params']['res'] = visual_spacing
-        
-        return aligned_image_out
+        ng_params['scale_params']['res'] = visual_spacing
+        ng_params['scale_params']['dims'] = [dim for dim in aligned_image_out.shape]
+
+        seg = create_precomputed(self.ng_params)
+        seg.create_segmentation_info()
+        seg.build_precomputed_info()
+        seg.create_segment_precomputed(aligned_image_out)
+
+        return
 
     def additional_channal_alignment(
         self, 
@@ -1207,7 +1217,11 @@ class Register(ArgSchemaParser):
         output_data_path = os.path.abspath(f"../results/ccf_annotation_reverse/OMEZarr")
         create_folder(output_data_path)
 
-        aligned_image, spacing = self.reverse_annotation_alignment(img_array, ants_params)
+        self.reverse_annotation_alignment(
+            img_array, 
+            ants_params, 
+            self.args['ng_params']
+        )
         
         end_date_time = datetime.now()
         

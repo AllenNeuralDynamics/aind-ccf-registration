@@ -8,12 +8,14 @@ import multiprocessing
 import os
 import platform
 import time
+from cloudvolume import CloudVolume
 from datetime import datetime
 from pathlib import Path
 from typing import List, Optional, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
+import scipy.ndimage as ndi
 import psutil
 import pydantic
 from aind_ccf_reg.configs import PathLike
@@ -304,19 +306,33 @@ class create_precomputed():
         self.scaling = ng_params['scale_params']
         self.save_path = ng_params['save_path']
 
+    def save_json(self, fpath: str, info: dict):
+        """
+        Saves information jsons for precomputed format
+
+        Parameters
+        ----------
+        fpath: str
+            full file path to where the data will be saved 
+        info: dict
+            data to be saved to file
+        """
+
+        path = f"{fpath}/info"
+
+        with open(path, 'w') as fp:
+            json.dump(file, fp, indent=2)
+        
+        return
+
     def create_segmentation_info(self):
         """
         Builds formating for additional info file for segmentation
-        precomuted defining the segmentation regions from CCFv3
-
-        Returns
-        -------
-        json_file: dict
-            region information formatted for saving as info file for 
-            segmentation precomputed
+        precomuted defining the segmentation regions from CCFv3 and
+        save to json
         """
     
-        json_file = {
+        json_data = {
             "@type": "neuroglancer_segment_properties",
             "inline": {
                 "ids": [str(k) for k in self.regions.keys()],
@@ -329,8 +345,11 @@ class create_precomputed():
                 ]
             }
         }
+        
+        fpath = f"{self.save_path}/segment_properties"
+        self.save_json(fpath, json_data)
 
-        return json_file
+        return
 
 
     def build_scales(self):
@@ -382,6 +401,8 @@ class create_precomputed():
             "num_channels": 1,
             "scales": build_scales(self.scaling)
         }
+
+        self.save_json(self.save_path, info)
     
         return info
 
@@ -408,7 +429,7 @@ class create_precomputed():
     
         return info
     
-    def save_segment_precomputed(self, img: np.array):
+    def create_segment_precomputed(self, img: np.array):
         """
         Creates segmentation precomputed pyramid and saves files
 
