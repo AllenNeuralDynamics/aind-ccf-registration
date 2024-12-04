@@ -785,7 +785,7 @@ class Register(ArgSchemaParser):
         ng_params['scale_params']['res'] = visual_spacing
         ng_params['scale_params']['dims'] = [dim for dim in aligned_image_out.shape]
 
-        seg = create_precomputed(self.ng_params)
+        seg = create_precomputed(ng_params)
         seg.create_segmentation_info()
         seg.build_precomputed_info()
         seg.create_segment_precomputed(aligned_image_out)
