@@ -448,7 +448,7 @@ class create_precomputed():
                 curr_img = ndi.zoom(img, tuple(factor), order = 0)
         
             info = volume_info(self.scaling, scale)
-            vol = CloudVolume(self.save_path, info=info, compress = 'br')
+            vol = CloudVolume(f"file:/{self.save_path}", info=info, compress = 'br')
             vol[:, :, :] = curr_img.astype('uint32')
         
         return

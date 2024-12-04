@@ -204,7 +204,7 @@ def main() -> None:
             "chunks": (64, 64, 64),
         },
         "ng_params":{
-            "save_path": "file:/" + precompute_path,
+            "save_path": precompute_path,
             "regions": regions,
             "scale_params": {
                 "encoding": "compresso",
