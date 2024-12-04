@@ -140,6 +140,13 @@ class RegSchema(ArgSchema):
         }
     )
 
+    ng_params = sch_dict(
+        metadata={
+            "required": True,
+            "description": "neuroglancer precompute parameters",
+        }
+    )
+
     reference_res = Int(
         metadata={
             "required": True,
