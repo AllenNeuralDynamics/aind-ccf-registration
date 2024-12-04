@@ -321,7 +321,7 @@ class create_precomputed():
         path = f"{fpath}/info"
 
         with open(path, 'w') as fp:
-            json.dump(file, fp, indent=2)
+            json.dump(info, fp, indent=2)
         
         return
 
