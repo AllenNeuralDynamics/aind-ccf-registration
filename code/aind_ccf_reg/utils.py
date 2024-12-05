@@ -399,7 +399,7 @@ class create_precomputed():
             "segment_properties": "segment_properties",
             "data_type": "uint32",
             "num_channels": 1,
-            "scales": self.build_scales(self.scaling)
+            "scales": self.build_scales()
         }
 
         self.save_json(self.save_path, info)
