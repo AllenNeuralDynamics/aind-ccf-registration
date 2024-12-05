@@ -1240,37 +1240,6 @@ class Register(ArgSchemaParser):
                 notes="Template based reversed registration: annotations in template space -> LS",
             )
         )
-
-        aligned_image_dask = da.from_array(aligned_image)
-        
-        self.write_zarr(
-            img_array=aligned_image_dask,  # dask array
-            physical_pixel_sizes=spacing,
-            output_path=output_data_path,
-            image_name=image_name,
-            opts=opts,
-        )
-        
-        data_processes.append(
-            DataProcess(
-                name=ProcessName.FILE_FORMAT_CONVERSION,
-                software_version=__version__,
-                start_date_time=start_date_time,
-                end_date_time=end_date_time,
-                input_location="In memory array",
-                output_location=str(
-                    Path(output_data_path).joinpath(image_name)
-                ),
-                outputs={},
-                code_url=self.args["code_url"],
-                code_version=__version__,
-                parameters={
-                    "pixel_sizes": spacing,
-                    "OMEZarr_params": self.args["OMEZarr_params"],
-                },
-                notes="Converting registered image to OMEZarr",
-            )
-        )
         
         #registers segmented channels to CCF
         for channel in self.args['additional_channels']:
