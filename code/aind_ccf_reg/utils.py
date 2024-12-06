@@ -219,7 +219,7 @@ def generate_processing(
 
 def rotate_image(img: np.array, in_mat: np.array):
     """
-    Rotates axes of a volume based on orientation matrix
+    Rotates axes of a volume based on orientation matrix.
     
     Parameters
     ----------
@@ -243,7 +243,7 @@ def rotate_image(img: np.array, in_mat: np.array):
     img_out = np.moveaxis(img, original, swapped)
 
     out_mat = in_mat[:, swapped]
-    for c, row in enumerate(in_mat.T):
+    for c, row in enumerate(in_mat):
         val = np.where(row)[0][0]
         if row[val] == -1:
             img_out = np.flip(img_out, c)
