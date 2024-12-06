@@ -371,7 +371,7 @@ class create_precomputed():
                 "encoding": self.scaling['encoding'],
                 "compressed_segmentation_block_size": self.scaling['compressed_block'],
                 "key": "_".join(
-                    [str(r * f**s) for r, f in zip(self.scaling['res'], self.scaling['factors'])]
+                    [str(int(r * f**s)) for r, f in zip(self.scaling['res'], self.scaling['factors'])]
                 ),
                 "resolution": [
                     int(r * f**s) for r, f in zip(self.scaling['res'], self.scaling['factors'])
@@ -380,7 +380,7 @@ class create_precomputed():
                     int(d // f**s) for d, f in zip(self.scaling['dims'], self.scaling['factors'])
                 ]                                     
             }
-        scales.append(scale)
+            scales.append(scale)
     
         return scales
 
