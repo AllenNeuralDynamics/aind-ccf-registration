@@ -146,7 +146,7 @@ def main() -> None:
     # ---------------------------------------------------#
 
     regions = read_json_as_dict('../code/aind_ccf_reg/ccf_files/annotation_map.json')
-    precompute_path = os.path.abspath('../results/annotation_precomputed')
+    precompute_path = os.path.abspath('../results/ccf_annotation_precomputed')
     create_folder(precompute_path)
     create_folder(f"{precompute_path}/segment_properties")
 
