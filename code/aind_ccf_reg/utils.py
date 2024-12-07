@@ -301,7 +301,7 @@ def check_orientation(img: np.array, params: dict, orientations: dict):
     if "".join(acronym) == "spl":
         orient_mat = abs(orient_mat)
 
-    img_out, out_mat = rotate_image(img, orient_mat)
+    img_out, out_mat = rotate_image(img, orient_mat, False)
 
     return img_out, orient_mat, out_mat
 

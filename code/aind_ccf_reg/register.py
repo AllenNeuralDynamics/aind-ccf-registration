@@ -693,7 +693,7 @@ class Register(ArgSchemaParser):
             reverse = True,
         )
         
-        spacing_order = np.where(in_mat.T)[1]
+        spacing_order = np.where(in_mat)[1]
         visual_spacing = tuple(
             [ants_params['spacing'][i] * 1000 for i in spacing_order]
         )
@@ -779,7 +779,7 @@ class Register(ArgSchemaParser):
             reverse = True,
         )
         
-        spacing_order = np.where(in_mat.T)[1]
+        spacing_order = np.where(in_mat)[1]
         visual_spacing = tuple(
             [ants_params['spacing'][i] * 10**6 for i in spacing_order]
         )
