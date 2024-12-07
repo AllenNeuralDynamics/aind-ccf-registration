@@ -207,7 +207,7 @@ def main() -> None:
             "save_path": precompute_path,
             "regions": regions,
             "scale_params": {
-                "encoding": "br",
+                "encoding": "compresso",
                 "compressed_block": [8, 8, 8],
                 "chunk_size": [16, 16, 16],
                 "factors": [2, 2, 2],
