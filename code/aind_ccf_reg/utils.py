@@ -217,7 +217,7 @@ def generate_processing(
 
     processing.write_standard_file(output_directory=dest_processing)
 
-def rotate_image(img: np.array, in_mat: np.array):
+def rotate_image(img: np.array, in_mat: np.array, reverse: bool):
     """
     Rotates axes of a volume based on orientation matrix.
     
@@ -236,9 +236,15 @@ def rotate_image(img: np.array, in_mat: np.array):
     out_mat: np.array
         axes correspondance after rotating array. Should always be an
         identity matrix
+    reverse: bool
+        if you are doing forward or reverse registration
     
     """
-    
+
+
+    if not reverse:
+        in_mat = in_mat.T
+
     original, swapped = np.where(in_mat)
     img_out = np.moveaxis(img, original, swapped)
 

@@ -690,9 +690,10 @@ class Register(ArgSchemaParser):
         aligned_image_out, _ = rotate_image(
             aligned_image_array,
             in_mat,
+            reverse = True,
         )
         
-        spacing_order = np.where(in_mat)[1]
+        spacing_order = np.where(in_mat.T)[1]
         visual_spacing = tuple(
             [ants_params['spacing'][i] * 1000 for i in spacing_order]
         )
@@ -775,9 +776,10 @@ class Register(ArgSchemaParser):
         aligned_image_out, _ = rotate_image(
             aligned_image_array,
             in_mat,
+            reverse = True,
         )
         
-        spacing_order = np.where(in_mat)[1]
+        spacing_order = np.where(in_mat.T)[1]
         visual_spacing = tuple(
             [ants_params['spacing'][i] * 10**6 for i in spacing_order]
         )
