@@ -467,7 +467,7 @@ class create_precomputed():
             new_file = file[:-3]
             os.rename(file, new_file)
 
-    return
+        return
 
 def profile_resources(
     time_points: List,
