@@ -459,6 +459,16 @@ class create_precomputed():
         
         return
 
+    def cleanup_seg_files(self):
+
+        files = glob(f"{self.save_path}/**/*.br", recusive = True)
+
+        for file in files:
+            new_file = file[:-3]
+            os.rename(file, new_file)
+
+    return
+
 def profile_resources(
     time_points: List,
     cpu_percentages: List,

@@ -693,9 +693,8 @@ class Register(ArgSchemaParser):
             reverse = True,
         )
         
-        spacing_order = np.where(in_mat)[1]
         visual_spacing = tuple(
-            [ants_params['spacing'][i] * 1000 for i in spacing_order]
+            [s * 1000 for s in ants_params['spacing']]
         )
         
         return aligned_image_out, visual_spacing
@@ -779,9 +778,8 @@ class Register(ArgSchemaParser):
             reverse = True,
         )
         
-        spacing_order = np.where(in_mat)[1]
         visual_spacing = tuple(
-            [ants_params['spacing'][i] * 10**6 for i in spacing_order]
+            [s * 10**6 for s in ants_params['spacing']]
         )
 
         ng_params['scale_params']['res'] = visual_spacing
@@ -791,6 +789,7 @@ class Register(ArgSchemaParser):
         seg.create_segmentation_info()
         seg.build_precomputed_info()
         seg.create_segment_precomputed(aligned_image_out)
+        seg.cleanup_seg_files()
 
         return
 
