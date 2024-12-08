@@ -18,6 +18,7 @@ import numpy as np
 import scipy.ndimage as ndi
 import psutil
 import pydantic
+from glob import glob
 from aind_ccf_reg.configs import PathLike
 from aind_data_schema.core.processing import (DataProcess, PipelineProcess,
                                               Processing)
