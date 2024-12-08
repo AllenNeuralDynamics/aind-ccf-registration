@@ -462,7 +462,7 @@ class create_precomputed():
 
     def cleanup_seg_files(self):
 
-        files = glob(f"{self.save_path}/**/*.br", recusive = True)
+        files = glob(f"{self.save_path}/**/*.br", recursive = True)
 
         for file in files:
             new_file = file[:-3]
