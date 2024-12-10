@@ -782,7 +782,7 @@ class Register(ArgSchemaParser):
         aligned_image_out = np.swapaxes(aligned_image_out, 0, 2)
         
         visual_spacing = tuple(
-            [s * 10**6 for s in ants_params['spacing']]
+            [s * 10**6 for s in ants_params['spacing'][::-1]]
         )
 
         ng_params['scale_params']['res'] = visual_spacing
