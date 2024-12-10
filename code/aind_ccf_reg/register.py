@@ -777,6 +777,9 @@ class Register(ArgSchemaParser):
             in_mat,
             reverse = True,
         )
+
+        #because precomputed builds xyz nor zyx
+        aligned_image_out = np.swapaxes(aligned_image_out, 0, 2)
         
         visual_spacing = tuple(
             [s * 10**6 for s in ants_params['spacing']]
