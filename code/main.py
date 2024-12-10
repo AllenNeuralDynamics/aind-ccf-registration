@@ -208,10 +208,10 @@ def main() -> None:
             "regions": regions,
             "scale_params": {
                 "encoding": "compresso",
-                "compressed_block": [8, 8, 8],
-                "chunk_size": [16, 16, 16],
+                "compressed_block": [16, 16, 16],
+                "chunk_size": [32, 32, 32],
                 "factors": [2, 2, 2],
-                "num_scales": 4
+                "num_scales": 3
             }
         }
     }

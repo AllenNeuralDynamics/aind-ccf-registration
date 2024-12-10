@@ -789,7 +789,6 @@ class Register(ArgSchemaParser):
         seg.create_segmentation_info()
         seg.build_precomputed_info()
         seg.create_segment_precomputed(aligned_image_out)
-        seg.cleanup_seg_files()
 
         return
 
