@@ -431,7 +431,7 @@ class create_precomputed():
             resolution = [int(r * f**scale) for r, f in zip(self.scaling['res'], self.scaling['factors'])],
             voxel_offset = [0, 0, 0],
             chunk_size = self.scaling['chunk_size'],
-            volume_size = [dim for dim in size]
+            volume_size = [dim for dim in shape]
         )
     
         return info
