@@ -413,7 +413,7 @@ class create_precomputed():
     
         return info
 
-    def volume_info(self, scale: int):
+    def volume_info(self, scale: int, shape: tuple):
         """
         Builds information for each scale of precomputed parymid
 
@@ -431,7 +431,7 @@ class create_precomputed():
             resolution = [int(r * f**scale) for r, f in zip(self.scaling['res'], self.scaling['factors'])],
             voxel_offset = [0, 0, 0],
             chunk_size = self.scaling['chunk_size'],
-            volume_size = [int(d // f**scale) for d, f in zip(self.scaling['dims'], self.scaling['factors'])]
+            volume_size = [dim for dim in shape]
         )
     
         return info
@@ -454,7 +454,7 @@ class create_precomputed():
                 factor = [1 / 2**scale for d in img.shape]
                 curr_img = ndi.zoom(img, tuple(factor), order = 0)
         
-            info = self.volume_info(scale)
+            info = self.volume_info(scale, curr_img.shape)
             vol = CloudVolume(f"file://{self.save_path}", info=info, compress = False)
             vol[:, :, :] = curr_img.astype('uint32')
         
