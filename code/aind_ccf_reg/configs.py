@@ -64,6 +64,22 @@ class RegSchema(ArgSchema):
             "description": "Path to the template-to-ccf transform",
         },
     )
+    
+    ccf_to_template_transform_path = sch_list(
+        cls_or_instance=Str,
+        metadata={
+            "required": True,
+            "description": "Path to the ccf-to-template transform",
+        },
+    )
+
+    additional_channels = sch_list(
+        cls_or_instance=Str,
+        metadata={
+            "required": True,
+            "description": "list of additional channels to register",
+        },
+    )
 
     ccf_to_template_transform_path = sch_list(
         cls_or_instance=Str,

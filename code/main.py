@@ -27,6 +27,7 @@ def main() -> None:
 
     pipeline_config = read_json_as_dict(processing_manifest_path)
     #channel_translations = pipeline_config.get("channel_translation")
+
     pipeline_config = pipeline_config.get("pipeline_processing")
 
     if pipeline_config is None:
@@ -46,6 +47,8 @@ def main() -> None:
     # Getting highest wavelenght as default for registration
     channel_to_register = sorted_channels[-1]
     additional_channels = pipeline_config['segmentation']['channels']
+
+
 
     results_folder = f"../results/ccf_{channel_to_register}"
     create_folder(results_folder)
