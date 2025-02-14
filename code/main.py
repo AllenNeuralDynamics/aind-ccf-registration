@@ -18,6 +18,9 @@ def main() -> None:
     processing_manifest_path = f"{data_folder}/processing_manifest.json"
     acquisition_path = f"{data_folder}/acquisition.json"
 
+    results_folder = f"../results/ccf_{channel_to_register}"
+    create_folder(results_folder)
+
     if not os.path.exists(processing_manifest_path):
         raise ValueError("Processing manifest path does not exist!")
 
@@ -56,8 +59,6 @@ def main() -> None:
         # Getting highest wavelenght as default for registration
         channel_to_register = sorted_channels[-1]
 
-        results_folder = f"../results/ccf_{channel_to_register}"
-        create_folder(results_folder)
         metadata_folder = os.path.abspath(f"{results_folder}/metadata")
         reg_folder = os.path.abspath(
             f"{metadata_folder}/registration_metadata"
