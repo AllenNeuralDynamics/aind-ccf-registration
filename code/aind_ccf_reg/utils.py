@@ -13,6 +13,7 @@ from typing import List, Optional
 
 import matplotlib.pyplot as plt
 import numpy as np
+from pathlib import Path
 import psutil
 import pydantic
 from aind_ccf_reg.configs import PathLike
@@ -536,3 +537,62 @@ def save_string_to_txt(txt: str, filepath: str, mode="w") -> None:
 
     with open(filepath, mode) as file:
         file.write(txt + "\n")
+
+def check_path_instance(obj: object) -> bool:
+    """
+    Checks if an objects belongs to pathlib.Path subclasses.
+
+    Parameters
+    ------------------------
+
+    obj: object
+        Object that wants to be validated.
+
+    Returns
+    ------------------------
+
+    bool:
+        True if the object is an instance of Path subclass, False otherwise.
+    """
+
+    for childclass in Path.__subclasses__():
+        if isinstance(obj, childclass):
+            return True
+
+    return False
+
+def save_dict_as_json(
+    filename: str, dictionary: dict, verbose: Optional[bool] = False
+) -> None:
+    """
+    Saves a dictionary as a json file.
+
+    Parameters
+    ------------------------
+
+    filename: str
+        Name of the json file.
+
+    dictionary: dict
+        Dictionary that will be saved as json.
+
+    verbose: Optional[bool]
+        True if you want to print the path where the file was saved.
+
+    """
+
+    if dictionary is None:
+        dictionary = {}
+
+    else:
+        for key, value in dictionary.items():
+            # Converting path to str to dump dictionary into json
+            if check_path_instance(value):
+                # TODO fix the \\ encode problem in dump
+                dictionary[key] = str(value)
+
+    with open(filename, "w") as json_file:
+        json.dump(dictionary, json_file, indent=4)
+
+    if verbose:
+        print(f"- Json file saved: {filename}")
