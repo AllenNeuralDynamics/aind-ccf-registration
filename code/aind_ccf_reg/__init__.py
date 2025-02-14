@@ -1,5 +1,4 @@
-"""CCF Registration package.
-"""
+"""CCF Registration package."""
 
 __version__ = "0.0.28"
 __authors__ = [

@@ -9,8 +9,7 @@ import os
 import platform
 import time
 from datetime import datetime
-from pathlib import Path
-from typing import List, Optional, Union
+from typing import List, Optional
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -398,20 +397,24 @@ def get_code_ocean_cpu_limit():
         return co_cpus
     if aws_batch_job_id:
         return 1
-    
+
     try:
         with open("/sys/fs/cgroup/cpu/cpu.cfs_quota_us") as fp:
             cfs_quota_us = int(fp.read())
         with open("/sys/fs/cgroup/cpu/cpu.cfs_period_us") as fp:
             cfs_period_us = int(fp.read())
-        
+
         container_cpus = cfs_quota_us // cfs_period_us
 
     except FileNotFoundError as e:
         container_cpus = 0
 
     # For physical machine, the `cfs_quota_us` could be '-1'
-    return psutil.cpu_count(logical=False) if container_cpus < 1 else container_cpus
+    return (
+        psutil.cpu_count(logical=False)
+        if container_cpus < 1
+        else container_cpus
+    )
 
 
 def print_system_information(logger: logging.Logger):

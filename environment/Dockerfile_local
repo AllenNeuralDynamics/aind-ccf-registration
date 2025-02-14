@@ -1,13 +1,16 @@
 FROM continuumio/miniconda3:23.9.0-0
+LABEL maintainer="Camilo Laiton <camilo.laiton@alleninstitute.org>"
 
 ARG DEBIAN_FRONTEND=noninteractive
 
-RUN apt-get update && conda create -n ccf_reg python=3.8 -y
+RUN apt-get update && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Make RUN commands use the new environment:
-SHELL ["conda", "run", "-n", "ccf_reg", "/bin/bash", "-c"]
+RUN conda create -n ccf_reg python=3.8 --no-default-packages -y && \
+    conda clean --all --yes
 
-RUN pip install -U --no-cache-dir \
+ENV PATH="/opt/conda/envs/ccf_reg/bin:$PATH"
+
+RUN conda run -n ccf_reg pip install --no-cache-dir \
     antspyx==0.4.2 \
     argschema==3.0.4 \
     s3fs==2022.11.0 \
