@@ -41,8 +41,6 @@ def main() -> None:
     # the channels. If the channel key does not exist, or it's empty
     # it means there are no segmentation channels splitted
     if channels_to_process is not None and len(channels_to_process):
-        results_folder = f"../results/ccf_{channel_to_register}"
-        create_folder(results_folder)
 
         acquisition_json = read_json_as_dict(acquisition_path)
         acquisition_orientation = acquisition_json.get("axes")
@@ -57,6 +55,9 @@ def main() -> None:
 
         # Getting highest wavelenght as default for registration
         channel_to_register = sorted_channels[-1]
+
+        results_folder = f"../results/ccf_{channel_to_register}"
+        create_folder(results_folder)
 
         metadata_folder = os.path.abspath(f"{results_folder}/metadata")
         reg_folder = os.path.abspath(
