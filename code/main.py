@@ -18,9 +18,6 @@ def main() -> None:
     processing_manifest_path = f"{data_folder}/processing_manifest.json"
     acquisition_path = f"{data_folder}/acquisition.json"
 
-    results_folder = f"../results/ccf_{channel_to_register}"
-    create_folder(results_folder)
-
     if not os.path.exists(processing_manifest_path):
         raise ValueError("Processing manifest path does not exist!")
 
@@ -44,6 +41,8 @@ def main() -> None:
     # the channels. If the channel key does not exist, or it's empty
     # it means there are no segmentation channels splitted
     if channels_to_process is not None and len(channels_to_process):
+        results_folder = f"../results/ccf_{channel_to_register}"
+        create_folder(results_folder)
 
         acquisition_json = read_json_as_dict(acquisition_path)
         acquisition_orientation = acquisition_json.get("axes")
@@ -218,6 +217,7 @@ def main() -> None:
 
     else:
         print(f"No registration channel, pipeline config: {pipeline_config}")
+        results_folder = "../results"
         utils.save_dict_as_json(
             filename=f"{results_folder}/registration_processing_manifest_empty.json",
             dictionary=pipeline_config,
